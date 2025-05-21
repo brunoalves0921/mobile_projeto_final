@@ -10,7 +10,7 @@
 
 ---
 
-## 1. Integrantes da Dupla
+## 1. Integrantes
 
 | Matrícula | Nome Completo | E-mail |
 |-----------|----------------|--------|
@@ -34,7 +34,6 @@ A aplicação foi desenvolvida com foco em:
 
 ## 3. Repositório de Código e Vídeo
 
-- 🔗 **Repositório [GitHub](https://github.com/brunoalves0921/mobile_projeto_final)**
 - 🎥 **[Vídeo](https://github.com/brunoalves0921/) de Apresentação:**
 - 📦 **Download [APK](https://github.com/brunoalves0921/mobile_projeto_final/tree/main/releases/download/v1.0.0/ondetem.apk)**
 
