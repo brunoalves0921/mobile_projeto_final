@@ -36,7 +36,7 @@ A aplicação foi desenvolvida com foco em:
 
 - 🔗 **Repositório [GitHub](https://github.com/brunoalves0921/mobile_projeto_final)**
 - 🎥 **[Vídeo](https://github.com/brunoalves0921/) de Apresentação:**
-📦 **APK:** [Download do APK](https://github.com/brunoalves0921/mobile_projeto_final/tree/main/releases/download/v1.0.0/ondetem.apk)
+- 📦 **Download [APK](https://github.com/brunoalves0921/mobile_projeto_final/tree/main/releases/download/v1.0.0/ondetem.apk)**
 
 
 ---
