@@ -1,6 +1,7 @@
 package com.example.ondetem.ui.screens
 
 import android.net.Uri
+import android.widget.FrameLayout
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.compose.foundation.layout.*
@@ -40,14 +41,28 @@ fun DetalhesScreen(produtoId: Int, viewModel: ProdutoViewModel) {
             AndroidView(
                 factory = {
                     VideoView(context).apply {
-                        setVideoURI(Uri.parse(produto.videoUrl))
-                        setMediaController(MediaController(context))
-                        start()
+                        layoutParams = FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.WRAP_CONTENT
+                        )
+
+                        setVideoPath(produto.videoUrl)
+
+                        setMediaController(MediaController(context).apply {
+                            setAnchorView(this@apply)
+                        })
+
+                        setOnPreparedListener { mediaPlayer ->
+                            mediaPlayer.setOnVideoSizeChangedListener { _, _, _ ->
+                                requestLayout()
+                            }
+                            start()
+                        }
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(220.dp) // ajuste de altura
             )
         }
     }

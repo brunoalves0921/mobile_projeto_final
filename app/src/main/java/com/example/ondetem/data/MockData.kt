@@ -5,12 +5,12 @@ val produtosMockados = listOf(
         id = 1,
         nome = "Cabo HDMI",
         descricao = "Cabo HDMI de 2 metros.",
-        preco = "R$ 25,00",
+        preco = "R$ 13,00",
         imagemUrl = "https://mirandacomputacao.jetassets.com.br/produto/46910-principal.png",
         loja = "Loja Tech",
         endereco = "Rua das Flores, 123",
         telefone = "(88) 99999-0001",
-        videoUrl = "https://www.youtube.com/embed/XqQmI3i1pCE?si=amsfq_GaRbnAmgHK"
+        videoUrl = "https://pouch.jumpshare.com/preview/o50g32yBMS5xnZI4pay9cY8p3pYYXFSmJXrd9f4kLc-_xKBN5m8bVlNnzJng99Ku54dhTgFUKLYAnjs_C4qN1_3tDkIa_-b14_9FXf20myRdArehattsCXEI4sEsmp_IjZOxz9rppd08aeWb7P70jW6yjbN-I2pg_cnoHs_AmgI.mp4"
     ),
     Produto(
         id = 2,
