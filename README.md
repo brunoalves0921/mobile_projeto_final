@@ -59,17 +59,30 @@ A aplicação foi desenvolvida com foco em:
 
 ## 5. Capturas de Tela
 
-> (adicione as imagens abaixo com legenda usando `![Legenda](caminho/arquivo.png)`)
-
 - 🏠 Tela Inicial
+
+![Home Screen](prints/telainicial.png)
 - 🔍 Campo de Busca
+
+![Home Screen](prints/busca.png)
 - 📄 Tela de Detalhes com vídeo
+
+![Home Screen](prints/detalhes.png)
 - ❤️ Tela de Favoritos
+
+![Home Screen](prints/favoritos.png)
 - ⚙️ Tela de Configurações com switches
+
+![Home Screen](prints/config.png)
 - ❓ Tela de Ajuda com FAQ e formulário
+
+![Home Screen](prints/ajuda.png)
 - 🧭 TopAppBar com logo (TEXTO) e menu
+
+![Home Screen](prints/topbar.png)
 - 🌙 Modo Escuro ativo
 
+![Home Screen](prints/escuro.png)
 ---
 
 ## 6. Arquitetura e Organização
