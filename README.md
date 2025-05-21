@@ -79,21 +79,31 @@ O projeto segue o padrão **MVVM (Model-View-ViewModel)** com a seguinte organiz
 ```
 com.example.ondetem/
 │
-├── data/               // Modelos e dados mockados
-│   └── Produto.kt
-│   └── MockData.kt
+├── data/ // Modelos e dados mockados
+│ ├── Produto.kt // Classe de dados do produto
+│ └── MockData.kt // Lista de produtos simulados
 │
-├── viewmodel/          // Lógica e estados (ViewModel)
-│   └── ProdutoViewModel.kt
+├── viewmodel/ // Lógica de estado e ações do app
+│ └── ProdutoViewModel.kt // ViewModel principal com estado das telas
 │
-├── ui/
-│   ├── components/     // Componentes visuais reutilizáveis
-│   ├── screens/        // Telas do app (Home, Detalhes, etc.)
-│   └── MainScreen.kt   // Navegação geral
+├── ui/ // Interface do usuário
+│ ├── components/ // Componentes reutilizáveis da UI
+│ │ ├── ProdutoCard.kt // Card visual dos produtos
+│ │ └── TopBar.kt // TopAppBar com logo (Texto) e menu
+│ │
+│ ├── screens/ // Telas principais do app
+│ │ ├── HomeScreen.kt // Tela inicial com busca e listagem
+│ │ ├── DetalhesScreen.kt // Tela de detalhes do produto
+│ │ ├── FavoritosScreen.kt // Tela com produtos favoritados
+│ │ ├── ConfiguracoesScreen.kt // Tela de preferências (modo escuro etc.)
+│ │ └── AjudaScreen.kt // Tela de perguntas frequentes e suporte
+│ │
+│ └── MainScreen.kt // Gerencia navegação e scaffold geral
 │
-├── ui/theme/           // Configuração de tema Material 3
+├── ui/theme/ // Tema visual do app
+│ └── AppTheme.kt // Tema dinâmico claro/escuro com Material 3
 │
-└── MainActivity.kt     // Ponto de entrada da aplicação
+└── MainActivity.kt // Ponto de entrada da aplicação
 ```
 
 - O gerenciamento de estado foi feito com `mutableStateOf` e `rememberSaveable`
