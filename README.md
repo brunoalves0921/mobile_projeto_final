@@ -34,7 +34,7 @@ A aplicação foi desenvolvida com foco em:
 
 ## 3. Repositório de Código e Vídeo
 
-- 🎥 **[Vídeo](https://github.com/brunoalves0921/) de Apresentação:**
+- 🎥 **[Vídeo](https://www.youtube.com/watch?v=8Fct9mTydCk) de Apresentação:**
 - 📦 **Download [APK](https://github.com/brunoalves0921/mobile_projeto_final/tree/main/releases/download/v1.0.0/ondetem.apk)**
 
 
