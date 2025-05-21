@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,15 +15,27 @@ import com.example.ondetem.viewmodel.ProdutoViewModel
 
 @Composable
 fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         OutlinedTextField(
             value = viewModel.busca,
             onValueChange = { viewModel.buscar(it) },
             label = { Text("Buscar produto...") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            shape = MaterialTheme.shapes.medium,
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = "Buscar")
+            }
         )
 
-        LazyColumn {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             items(viewModel.produtos) { produto ->
                 ProdutoCard(produto = produto) {
                     onItemClick(produto.id)
