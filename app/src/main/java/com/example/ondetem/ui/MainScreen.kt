@@ -6,7 +6,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.example.ondetem.ui.components.TopBar
 import com.example.ondetem.ui.screens.*
@@ -21,14 +20,17 @@ fun MainScreen(
     val navController = rememberNavController()
     val currentRoute = remember { mutableStateOf("home") }
 
-    val bottomItems = listOf("home", "favoritos", "config", "ajuda")
+    val bottomItems = listOf("home", "favoritos")
 
     Scaffold(
         topBar = {
             TopBar(
-                onNavigateTo = { route ->
-                    navController.navigate(route)
-                    currentRoute.value = route
+                currentRoute = currentRoute.value,
+                canNavigateBack = currentRoute.value !in listOf("home", "favoritos"),
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateTo = {
+                    navController.navigate(it)
+                    currentRoute.value = it
                 }
             )
         },
@@ -41,8 +43,6 @@ fun MainScreen(
                                 imageVector = when (screen) {
                                     "home" -> Icons.Default.Home
                                     "favoritos" -> Icons.Default.Favorite
-                                    "config" -> Icons.Default.Settings
-                                    "ajuda" -> Icons.Default.Info
                                     else -> Icons.Default.Home
                                 },
                                 contentDescription = null
@@ -51,32 +51,43 @@ fun MainScreen(
                         label = { Text(screen.replaceFirstChar { it.uppercase() }) },
                         selected = currentRoute.value == screen,
                         onClick = {
-                            currentRoute.value = screen
                             navController.navigate(screen)
+                            currentRoute.value = screen
                         }
                     )
                 }
             }
         }
-    ) { paddingValues ->
+    ) { padding ->
         NavHost(
             navController = navController,
             startDestination = "home",
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(padding)
         ) {
             composable("home") {
-                HomeScreen(viewModel) { id -> navController.navigate("detalhes/$id") }
+                currentRoute.value = "home"
+                HomeScreen(viewModel) { id ->
+                    navController.navigate("detalhes/$id")
+                    currentRoute.value = "detalhes"
+                }
             }
             composable("favoritos") {
-                FavoritosScreen(viewModel) { id -> navController.navigate("detalhes/$id") }
+                currentRoute.value = "favoritos"
+                FavoritosScreen(viewModel) { id ->
+                    navController.navigate("detalhes/$id")
+                    currentRoute.value = "detalhes"
+                }
             }
             composable("config") {
+                currentRoute.value = "config"
                 ConfiguracoesScreen(viewModel, darkMode, onToggleDarkMode)
             }
             composable("ajuda") {
+                currentRoute.value = "ajuda"
                 AjudaScreen()
             }
             composable("detalhes/{id}") { backStackEntry ->
+                currentRoute.value = "detalhes"
                 val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
                 DetalhesScreen(produtoId = id, viewModel = viewModel)
             }
