@@ -53,6 +53,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    // Gson para salvar e ler dados JSON
+    implementation("com.google.code.gson:gson:2.10.1")
+
     // Corrige navegação (jvmstubs parece erro de resolução)
     implementation("androidx.navigation:navigation-compose:2.7.3")
 

@@ -19,14 +19,14 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     val currentRoute = remember { mutableStateOf("home") }
-
+    val showBottomBar = currentRoute.value in listOf("home", "favoritos")
     val bottomItems = listOf("home", "favoritos")
 
     Scaffold(
         topBar = {
             TopBar(
                 currentRoute = currentRoute.value,
-                canNavigateBack = currentRoute.value !in listOf("home", "favoritos"),
+                canNavigateBack = currentRoute.value !in listOf("home", "favoritos", "selecionar_perfil", "login", "cadastro"),
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateTo = {
                     navController.navigate(it)
@@ -35,33 +35,35 @@ fun MainScreen(
             )
         },
         bottomBar = {
-            NavigationBar {
-                bottomItems.forEach { screen ->
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                imageVector = when (screen) {
-                                    "home" -> Icons.Default.Home
-                                    "favoritos" -> Icons.Default.Favorite
-                                    else -> Icons.Default.Home
-                                },
-                                contentDescription = null
-                            )
-                        },
-                        label = { Text(screen.replaceFirstChar { it.uppercase() }) },
-                        selected = currentRoute.value == screen,
-                        onClick = {
-                            navController.navigate(screen)
-                            currentRoute.value = screen
-                        }
-                    )
+            if (showBottomBar) {
+                NavigationBar {
+                    bottomItems.forEach { screen ->
+                        NavigationBarItem(
+                            icon = {
+                                Icon(
+                                    imageVector = when (screen) {
+                                        "home" -> Icons.Default.Home
+                                        "favoritos" -> Icons.Default.Favorite
+                                        else -> Icons.Default.Home
+                                    },
+                                    contentDescription = null
+                                )
+                            },
+                            label = { Text(screen.replaceFirstChar { it.uppercase() }) },
+                            selected = currentRoute.value == screen,
+                            onClick = {
+                                navController.navigate(screen)
+                                currentRoute.value = screen
+                            }
+                        )
+                    }
                 }
             }
         }
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "selecionar_perfil",
             modifier = Modifier.padding(padding)
         ) {
             composable("home") {
@@ -90,6 +92,52 @@ fun MainScreen(
                 currentRoute.value = "detalhes"
                 val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
                 DetalhesScreen(produtoId = id, viewModel = viewModel)
+            }
+            composable("selecionar_perfil") {
+                currentRoute.value = "selecionar_perfil"
+                RoleSelectionScreen(
+                    onSelecionarCliente = {
+                        navController.navigate("home")
+                        currentRoute.value = "home"
+                    },
+                    onSelecionarVendedor = {
+                        navController.navigate("login") // tela futura
+                        currentRoute.value = "login"
+                    }
+                )
+            }
+            composable("login") {
+                currentRoute.value = "login"
+                LoginScreen(
+                    onLoginSucesso = {
+                        navController.navigate("vendedor_home") {
+                            popUpTo("selecionar_perfil") { inclusive = true }
+                        }
+                        currentRoute.value = "vendedor_home"
+                    },
+                    onIrParaCadastro = {
+                        navController.navigate("cadastro")
+                        currentRoute.value = "cadastro"
+                    }
+                )
+            }
+
+            composable("cadastro") {
+                currentRoute.value = "cadastro"
+                CadastroScreen(
+                    onCadastroSucesso = {
+                        navController.navigate("login") { popUpTo("cadastro") { inclusive = true } }
+                        currentRoute.value = "login"
+                    },
+                    onVoltarParaLogin = {
+                        navController.popBackStack()
+                        currentRoute.value = "login"
+                    }
+                )
+            }
+            composable("vendedor_home") {
+                currentRoute.value = "vendedor_home"
+                VendedorHomeScreen()
             }
         }
     }

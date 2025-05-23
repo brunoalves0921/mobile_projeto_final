@@ -1,19 +1,16 @@
 package com.example.ondetem.ui.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
+import com.example.ondetem.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,11 +21,12 @@ fun TopBar(
     onNavigateTo: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val hideBackButton = currentRoute in listOf("selecionar_perfil", "login", "cadastro")
 
     TopAppBar(
         title = { Text("Onde Tem?") },
         navigationIcon = {
-            if (canNavigateBack) {
+            if (!hideBackButton && canNavigateBack) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
                 }
