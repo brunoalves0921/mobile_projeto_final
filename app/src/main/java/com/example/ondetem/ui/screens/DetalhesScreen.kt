@@ -3,6 +3,7 @@ package com.example.ondetem.ui.screens
 import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -38,7 +39,8 @@ import java.util.*
 fun DetalhesScreen(
     produtoId: Int,
     favoriteProducts: List<Produto>,
-    onToggleFavorite: (Produto) -> Unit
+    onToggleFavorite: (Produto) -> Unit,
+    areNotificationsEnabled: Boolean
 ) {
     val context = LocalContext.current
     val produto = produtosMockados.firstOrNull { it.id == produtoId } ?: return
@@ -53,6 +55,7 @@ fun DetalhesScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            // RESTAURADO: As informações do produto que estavam faltando
             Text(produto.nome, style = MaterialTheme.typography.headlineMedium)
             Text(produto.descricao, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -63,14 +66,13 @@ fun DetalhesScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // A lógica para saber se é favorito agora checa a lista recebida como parâmetro
             val isFavorito = favoriteProducts.any { it.id == produto.id }
             val escalaIcone by animateFloatAsState(
                 targetValue = if (isFavorito) 1.2f else 1.0f,
                 label = "escalaIcone"
             )
 
-            // O botão de favoritar agora chama a função recebida como parâmetro
+            // Botão de favoritar (agora deve aparecer corretamente)
             Button(onClick = { onToggleFavorite(produto) }) {
                 Icon(
                     imageVector = if (isFavorito) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -84,7 +86,13 @@ fun DetalhesScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Botão de criar lembrete
             OutlinedButton(onClick = {
+                if (!areNotificationsEnabled) {
+                    Toast.makeText(context, "As notificações estão desativadas. Ative nas configurações.", Toast.LENGTH_SHORT).show()
+                    return@OutlinedButton
+                }
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     if (!notificacaoPermissionState.status.isGranted) {
                         notificacaoPermissionState.launchPermissionRequest()
@@ -102,7 +110,7 @@ fun DetalhesScreen(
                     context,
                     produto.id,
                     intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    PendingIntent.FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE
                 )
 
                 val triggerAtMillis = Calendar.getInstance().timeInMillis + 10_000
@@ -120,6 +128,7 @@ fun DetalhesScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Seção do vídeo
             if (produto.videoUrl.isNotBlank()) {
                 val videoContext = LocalContext.current
                 AndroidView(

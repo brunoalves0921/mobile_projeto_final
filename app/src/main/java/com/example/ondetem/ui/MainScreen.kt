@@ -1,19 +1,36 @@
 package com.example.ondetem.ui
 
-import androidx.compose.animation.*
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.components.TopBar
-import com.example.ondetem.ui.screens.*
+import com.example.ondetem.ui.screens.AjudaScreen
+import com.example.ondetem.ui.screens.CadastroScreen
+import com.example.ondetem.ui.screens.ConfiguracoesScreen
+import com.example.ondetem.ui.screens.DetalhesScreen
+import com.example.ondetem.ui.screens.FavoritosScreen
+import com.example.ondetem.ui.screens.HomeScreen
+import com.example.ondetem.ui.screens.LoginScreen
+import com.example.ondetem.ui.screens.RoleSelectionScreen
+import com.example.ondetem.ui.screens.VendedorHomeScreen
 import com.example.ondetem.viewmodel.ProdutoViewModel
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -23,7 +40,9 @@ fun MainScreen(
     darkMode: Boolean,
     onToggleDarkMode: () -> Unit,
     favoriteProducts: List<Produto>,
-    onToggleFavorite: (Produto) -> Unit
+    onToggleFavorite: (Produto) -> Unit,
+    areNotificationsEnabled: Boolean,
+    onToggleNotifications: () -> Unit
 ) {
     val navController = rememberNavController()
     val currentRoute = remember { mutableStateOf("home") }
@@ -94,7 +113,13 @@ fun MainScreen(
             }
             composable("config") {
                 currentRoute.value = "config"
-                ConfiguracoesScreen(viewModel, darkMode, onToggleDarkMode)
+                ConfiguracoesScreen(
+                    viewModel = viewModel,
+                    darkMode = darkMode,
+                    onToggleDarkMode = onToggleDarkMode,
+                    areNotificationsEnabled = areNotificationsEnabled,
+                    onToggleNotifications = onToggleNotifications
+                )
             }
             composable("ajuda") {
                 currentRoute.value = "ajuda"
@@ -103,11 +128,11 @@ fun MainScreen(
             composable("detalhes/{id}") { backStackEntry ->
                 currentRoute.value = "detalhes"
                 val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
-                // ESTA É A CHAMADA CORRETA. A DEFINIÇÃO DA FUNÇÃO NÃO DEVE ESTAR AQUI.
                 DetalhesScreen(
                     produtoId = id,
                     favoriteProducts = favoriteProducts,
-                    onToggleFavorite = onToggleFavorite
+                    onToggleFavorite = onToggleFavorite,
+                    areNotificationsEnabled = areNotificationsEnabled
                 )
             }
             composable("selecionar_perfil") {

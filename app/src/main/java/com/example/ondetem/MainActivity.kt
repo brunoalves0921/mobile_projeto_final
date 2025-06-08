@@ -8,7 +8,7 @@ import com.example.ondetem.data.Produto
 import com.example.ondetem.data.SettingsDataStore
 import com.example.ondetem.data.produtosMockados
 import com.example.ondetem.ui.MainScreen
-import com.example.ondetem.ui.theme.OndeTEMTheme // Vamos usar este tema
+import com.example.ondetem.ui.theme.OndeTEMTheme
 import com.example.ondetem.viewmodel.ProdutoViewModel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -22,20 +22,19 @@ class MainActivity : ComponentActivity() {
         settingsDataStore = SettingsDataStore(this)
 
         lifecycleScope.launch {
-            // Combine para reagir a mudanças no modo escuro e nos favoritos
+            // Combine para ouvir os 3 fluxos: modo escuro, favoritos e notificações
             combine(
                 settingsDataStore.isDarkMode,
-                settingsDataStore.favoriteProductIds
-            ) { isDarkMode, favoriteIds ->
-                // Filtra a lista principal de produtos para obter os objetos Produto favoritos
+                settingsDataStore.favoriteProductIds,
+                settingsDataStore.areNotificationsEnabled
+            ) { isDarkMode, favoriteIds, notificationsEnabled ->
                 val favoriteProducts = produtosMockados.filter { produto ->
                     favoriteIds.contains(produto.id.toString())
                 }
-                // Retorna os dois valores para o `collect`
-                isDarkMode to favoriteProducts
-            }.collect { (isDarkMode, favoriteProducts) ->
+                // Retorna uma Tupla com os três valores
+                Triple(isDarkMode, favoriteProducts, notificationsEnabled)
+            }.collect { (isDarkMode, favoriteProducts, notificationsEnabled) ->
                 setContent {
-                    // Lembre-se que apagamos o AppTheme.kt, agora usamos OndeTEMTheme
                     OndeTEMTheme(darkTheme = isDarkMode) {
                         MainScreen(
                             viewModel = viewModel,
@@ -45,12 +44,17 @@ class MainActivity : ComponentActivity() {
                                     settingsDataStore.saveDarkMode(!isDarkMode)
                                 }
                             },
-                            // Passando a lista de favoritos e a função para alterá-la
                             favoriteProducts = favoriteProducts,
                             onToggleFavorite = { produto ->
                                 lifecycleScope.launch {
-                                    // A nova função toggleFavorite no DataStore simplifica a lógica aqui
                                     settingsDataStore.toggleFavorite(produto.id.toString())
+                                }
+                            },
+                            // ADICIONADO: Passando o estado e a função das notificações
+                            areNotificationsEnabled = notificationsEnabled,
+                            onToggleNotifications = {
+                                lifecycleScope.launch {
+                                    settingsDataStore.saveNotificationsPreference(!notificationsEnabled)
                                 }
                             }
                         )

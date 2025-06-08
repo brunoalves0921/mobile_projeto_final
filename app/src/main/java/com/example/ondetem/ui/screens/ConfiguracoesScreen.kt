@@ -3,7 +3,6 @@ package com.example.ondetem.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -13,9 +12,13 @@ import com.example.ondetem.viewmodel.ProdutoViewModel
 fun ConfiguracoesScreen(
     viewModel: ProdutoViewModel,
     darkMode: Boolean,
-    onToggleDarkMode: () -> Unit
+    onToggleDarkMode: () -> Unit,
+    // ADICIONADO: Parâmetros para o Switch de notificações
+    areNotificationsEnabled: Boolean,
+    onToggleNotifications: () -> Unit
 ) {
-    var notificacoes by rememberSaveable { mutableStateOf(true) }
+    // REMOVIDO: O estado local não é mais necessário
+    // var notificacoes by rememberSaveable { mutableStateOf(true) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -25,10 +28,14 @@ fun ConfiguracoesScreen(
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Notificações", modifier = Modifier.weight(1f))
-            Switch(checked = notificacoes, onCheckedChange = { notificacoes = it })
+            // ALTERADO: O Switch agora usa os parâmetros recebidos
+            Switch(
+                checked = areNotificationsEnabled,
+                onCheckedChange = { onToggleNotifications() }
+            )
         }
         Spacer(Modifier.height(16.dp))
-        Button(onClick = { /* A lógica para limpar favoritos precisaria ser implementada aqui */ }) {
+        Button(onClick = { /* Lógica para limpar favoritos */ }) {
             Text("Limpar Favoritos")
         }
     }
