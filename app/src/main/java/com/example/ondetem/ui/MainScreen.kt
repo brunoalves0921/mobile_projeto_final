@@ -1,37 +1,22 @@
 package com.example.ondetem.ui
 
-import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.components.TopBar
-import com.example.ondetem.ui.screens.AjudaScreen
-import com.example.ondetem.ui.screens.CadastroScreen
-import com.example.ondetem.ui.screens.ConfiguracoesScreen
-import com.example.ondetem.ui.screens.DetalhesScreen
-import com.example.ondetem.ui.screens.FavoritosScreen
-import com.example.ondetem.ui.screens.HomeScreen
-import com.example.ondetem.ui.screens.LoginScreen
-import com.example.ondetem.ui.screens.RoleSelectionScreen
-import com.example.ondetem.ui.screens.VendedorHomeScreen
+import com.example.ondetem.ui.screens.*
 import com.example.ondetem.viewmodel.ProdutoViewModel
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -45,7 +30,7 @@ fun MainScreen(
     onToggleNotifications: () -> Unit
 ) {
     val navController = rememberNavController()
-    val currentRoute = remember { mutableStateOf("home") }
+    val currentRoute = remember { mutableStateOf("selecionar_perfil") }
     val showBottomBar = currentRoute.value in listOf("home", "favoritos")
     val bottomItems = listOf("home", "favoritos")
 
@@ -53,7 +38,7 @@ fun MainScreen(
         topBar = {
             TopBar(
                 currentRoute = currentRoute.value,
-                canNavigateBack = currentRoute.value !in listOf("home", "favoritos", "selecionar_perfil", "login", "cadastro"),
+                canNavigateBack = navController.previousBackStackEntry != null && currentRoute.value != "selecionar_perfil",
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateTo = {
                     navController.navigate(it)
@@ -139,7 +124,9 @@ fun MainScreen(
                 currentRoute.value = "selecionar_perfil"
                 RoleSelectionScreen(
                     onSelecionarCliente = {
-                        navController.navigate("home")
+                        navController.navigate("home") {
+                            popUpTo("selecionar_perfil") { inclusive = true }
+                        }
                         currentRoute.value = "home"
                     },
                     onSelecionarVendedor = {
@@ -151,11 +138,11 @@ fun MainScreen(
             composable("login") {
                 currentRoute.value = "login"
                 LoginScreen(
-                    onLoginSucesso = {
-                        navController.navigate("vendedor_home") {
+                    onLoginSucesso = { email ->
+                        navController.navigate("perfil_vendedor/$email") {
                             popUpTo("selecionar_perfil") { inclusive = true }
                         }
-                        currentRoute.value = "vendedor_home"
+                        currentRoute.value = "perfil_vendedor"
                     },
                     onIrParaCadastro = {
                         navController.navigate("cadastro")
@@ -176,9 +163,76 @@ fun MainScreen(
                     }
                 )
             }
-            composable("vendedor_home") {
-                currentRoute.value = "vendedor_home"
-                VendedorHomeScreen()
+
+            // NOVA ROTA: Perfil do Vendedor
+            composable("perfil_vendedor/{email}") { backStackEntry ->
+                currentRoute.value = "perfil_vendedor"
+                val email = backStackEntry.arguments?.getString("email") ?: ""
+                PerfilVendedorScreen(
+                    vendedorEmail = email,
+                    onCadastrarLoja = {
+                        navController.navigate("cadastro_loja/$email")
+                        currentRoute.value = "cadastro_loja"
+                    },
+                    onLogout = {
+                        navController.navigate("selecionar_perfil") {
+                            // Limpa a pilha de navegação até o perfil, removendo-o
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
+                            }
+                        }
+                        // Força a navegação para o início
+                        navController.navigate("selecionar_perfil")
+                        currentRoute.value = "selecionar_perfil"
+                    },
+                    // Ação ao clicar na loja
+                    onLojaClick = { nomeLoja ->
+                        // Codifica o nome da loja para passar como argumento de URL
+                        val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString())
+                        navController.navigate("detalhes_loja/$encodedNomeLoja")
+                        currentRoute.value = "detalhes_loja"
+                    }
+                )
+            }
+
+            // NOVA ROTA: Cadastro de Loja
+            composable("cadastro_loja/{vendedorEmail}") { backStackEntry ->
+                currentRoute.value = "cadastro_loja"
+                val email = backStackEntry.arguments?.getString("vendedorEmail") ?: ""
+                CadastroLojaScreen(
+                    vendedorEmail = email,
+                    onLojaCadastrada = {
+                        navController.popBackStack()
+                        currentRoute.value = "perfil_vendedor"
+                    }
+                )
+            }
+
+            // NOVA ROTA: Detalhes da Loja
+            composable("detalhes_loja/{nomeLoja}") { backStackEntry ->
+                currentRoute.value = "detalhes_loja"
+                val nomeLoja = backStackEntry.arguments?.getString("nomeLoja") ?: ""
+                DetalhesLojaScreen(
+                    nomeLoja = nomeLoja,
+                    onAddProduto = {
+                        val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString())
+                        navController.navigate("cadastro_produto/$encodedNomeLoja")
+                        currentRoute.value = "cadastro_produto"
+                    }
+                )
+            }
+
+            // NOVA ROTA: Cadastro de Produto
+            composable("cadastro_produto/{nomeLoja}") { backStackEntry ->
+                currentRoute.value = "cadastro_produto"
+                val nomeLoja = backStackEntry.arguments?.getString("nomeLoja") ?: ""
+                CadastroProdutoScreen(
+                    nomeLoja = nomeLoja,
+                    onProdutoCadastrado = {
+                        navController.popBackStack()
+                        currentRoute.value = "detalhes_loja"
+                    }
+                )
             }
         }
     }

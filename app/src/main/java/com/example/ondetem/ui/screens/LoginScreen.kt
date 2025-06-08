@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginSucesso: () -> Unit,
+    onLoginSucesso: (String) -> Unit, // Alterado para receber o email do vendedor
     onIrParaCadastro: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -52,11 +52,12 @@ fun LoginScreen(
         Button(
             onClick = {
                 if (email.isNotBlank() && senha.isNotBlank()) {
-                    val valido = VendedorRepository.validarLogin(context, email, senha)
+                    val emailLimpo = email.trim()
+                    val valido = VendedorRepository.validarLogin(context, emailLimpo, senha)
                     scope.launch {
                         if (valido) {
                             snackbarHostState.showSnackbar("Login bem-sucedido!")
-                            onLoginSucesso()
+                            onLoginSucesso(emailLimpo) // Passa o email para a navegação
                         } else {
                             snackbarHostState.showSnackbar("Credenciais inválidas.")
                         }

@@ -20,127 +20,113 @@
 
 ## 2. Resumo da Entrega
 
-Este projeto é a segunda etapa do trabalho final da disciplina e consiste na construção da primeira versão funcional da aplicação *Onde Tem?*, utilizando **Jetpack Compose** e **Kotlin**. A proposta é facilitar a busca de produtos em lojas físicas próximas ao usuário, conectando consumidores e comerciantes locais.
+Este projeto representa a terceira e mais avançada etapa do trabalho final da disciplina. A versão atual do *Onde Tem?* evoluiu de uma aplicação simples para uma solução mais robusta e interativa, construída com **Jetpack Compose** e **Kotlin**.
 
-A aplicação foi desenvolvida com foco em:
+Nesta fase, o foco foi a implementação de funcionalidades avançadas exigidas para a conclusão do projeto, como:
+- **Persistência de dados e preferências** com Jetpack DataStore.
+- **Agendamento de notificações** utilizando Services e BroadcastReceivers.
+- **Melhoria na experiência do usuário** com indicadores de progresso e animações sutis.
+- **Criação de um fluxo de autenticação** para o perfil de "Vendedor", com telas de login e cadastro.
 
-- Navegação entre telas usando `NavController`, `Scaffold`, `TopAppBar` e `BottomNavigation`
-- Layouts dinâmicos com `LazyColumn` e `LazyRow`
-- Tema claro/escuro
-- Multimídia simulada (reprodução de vídeo)
-- Gerenciamento de estado com `remember`, `mutableStateOf`, `rememberSaveable`
+O aplicativo continua com o propósito de conectar consumidores a comerciantes locais, facilitando a busca por produtos em lojas físicas da região.
 
 ---
 
 ## 3. Repositório de Código e Vídeo
 
-- 🎥 **[Vídeo](https://www.youtube.com/watch?v=8Fct9mTydCk) de Apresentação:**
-- 📦 **Download [APK](https://github.com/brunoalves0921/mobile_projeto_final/tree/main/releases/download/v1.0.0/ondetem.apk)**
-
+- 🎥 **[Vídeo de Apresentação](https://www.youtube.com/watch?v=8Fct9mTydCk):** (Seu link aqui)
+- 📦 **[Download APK](https://github.com/brunoalves0921/mobile_projeto_final/tree/main/releases/download/v1.0.0/ondetem.apk):** (Seu link aqui)
 
 ---
 
 ## 4. Funcionalidades Implementadas
 
-| Funcionalidade                                          | Status       | Responsável           |
-|----------------------------------------------------------|--------------|------------------------|
-| Tela inicial com busca e lista de produtos               | ✅ Concluído | Jorge Bruno |
-| Tela de detalhes com informações e vídeo e botão de favoritar                | ✅ Concluído | Jorge Bruno |
-| Tela de favoritos                                         | ✅ Concluído | Jorge Bruno |
-| Tela de configurações com modo escuro e ações            | ✅ Concluído | Jorge Bruno |
-| Tela de ajuda com FAQs e simulação de envio de mensagem  | ✅ Concluído | Jorge Bruno |
-| Menu de três pontinhos com navegação                     | ✅ Concluído | Jorge Bruno |
-| Tema claro/escuro dinâmico                               | ✅ Concluído | Jorge Bruno |
-| Uso de dados mockados para os produtos                   | ✅ Concluído | Jorge Bruno |
-| Logo no TopAppBar (Texto) e ícone do app (Imagem)                    | ✅ Concluído | Jorge Bruno |
+| Funcionalidade | Status | Responsável |
+|---|---|---|
+| **Interface e Navegação** | | |
+| Tela inicial com busca de produtos | ✅ Concluído | Jorge Bruno |
+| Tela de detalhes com informações e vídeo | ✅ Concluído | Jorge Bruno |
+| Navegação com TopAppBar, BottomBar e NavController | ✅ Concluído | Jorge Bruno |
+| Menu de opções (Configurações, Ajuda) | ✅ Concluído | Jorge Bruno |
+| **Persistência de Dados (Jetpack DataStore)** | | |
+| Salvar/Carregar preferência de Modo Escuro | ✅ Concluído | Jorge Bruno |
+| Salvar/Carregar lista de produtos favoritos | ✅ Concluído | Jorge Bruno |
+| Salvar/Carregar preferência de ativação de notificações | ✅ Concluído | Jorge Bruno |
+| **Funcionalidades Avançadas** | | |
+| Agendamento de notificações de lembrete para produtos | ✅ Concluído | Jorge Bruno |
+| Indicador de progresso (`CircularProgressIndicator`) na busca | ✅ Concluído | Jorge Bruno |
+| Animações de transição de tela (fade-in/out) | ✅ Concluído | Jorge Bruno |
+| Animações em componentes (botão de favoritar) | ✅ Concluído | Jorge Bruno |
+| **Autenticação de Vendedor** | | |
+| Tela de seleção de perfil (Cliente/Vendedor) | ✅ Concluído | Jorge Bruno |
+| Tela de Login para Vendedor | ✅ Concluído | Jorge Bruno |
+| Tela de Cadastro para Vendedor | ✅ Concluído | Jorge Bruno |
+| Persistência de dados do vendedor em arquivo JSON | ✅ Concluído | Jorge Bruno |
+| **Ajuda e Configurações** | | |
+| Tela de Configurações com controles funcionais | ✅ Concluído | Jorge Bruno |
+| Tela de Ajuda com FAQ e formulário de contato | ✅ Concluído | Jorge Bruno |
 
 ---
 
 ## 5. Capturas de Tela
 
 - 🏠 Tela Inicial
-
-![Home Screen](prints/telainicial.png)
-- 🔍 Campo de Busca
-
-![Home Screen](prints/busca.png)
+  ![Home Screen](prints/telainicial.png)
+- 🔍 Busca com Indicador de Progresso
+  *(Novo Print: Mostre a tela de busca com o indicador de progresso circular aparecendo)*
 - 📄 Tela de Detalhes com vídeo
-
-![Home Screen](prints/detalhes.png)
-- ❤️ Tela de Favoritos
-
-![Home Screen](prints/favoritos.png)
-- ⚙️ Tela de Configurações com switches
-
-![Home Screen](prints/config.png)
-- ❓ Tela de Ajuda com FAQ e formulário
-
-![Home Screen](prints/ajuda.png)
-- 🧭 TopAppBar com logo (TEXTO) e menu
-
-![Home Screen](prints/topbar.png)
+  ![Home Screen](prints/detalhes.png)
+- ❤️ Tela de Favoritos (com itens salvos)
+  ![Home Screen](prints/favoritos.png)
+- ⚙️ Tela de Configurações funcional
+  ![Home Screen](prints/config.png)
 - 🌙 Modo Escuro ativo
+  ![Home Screen](prints/escuro.png)
+- 🔔 Notificação de Lembrete
+  *(Novo Print: Mostre a notificação gerada pelo app na bandeja do sistema)*
+- 👤 Tela de Seleção de Perfil
+  *(Novo Print: Mostre a tela inicial onde o usuário escolhe entre "Sou Cliente" e "Sou Vendedor")*
+- 🔑 Tela de Login do Vendedor
+  *(Novo Print: Mostre a tela de login com os campos de e-mail e senha)*
+- ✍️ Tela de Cadastro do Vendedor
+  *(Novo Print: Mostre a tela de cadastro do vendedor)*
 
-![Home Screen](prints/escuro.png)
 ---
 
 ## 6. Arquitetura e Organização
 
-O projeto segue o padrão **MVVM (Model-View-ViewModel)** com a seguinte organização:
+O projeto segue o padrão **MVVM (Model-View-ViewModel)** e foi estruturado para separar responsabilidades, com as seguintes novidades:
 
 ```
 com.example.ondetem/
 │
-├── data/ // Modelos e dados mockados
-│ ├── Produto.kt // Classe de dados do produto
-│ └── MockData.kt // Lista de produtos simulados
+├── data/
+│ ├── SettingsDataStore.kt  // Novo: Gerencia as preferências com Jetpack DataStore
+│ ├── VendedorRepository.kt // Novo: Gerencia os dados dos vendedores (leitura/escrita em JSON)
+│ ├── Produto.kt
+│ ├── Vendedor.kt
+│ └── MockData.kt
 │
-├── viewmodel/ // Lógica de estado e ações do app
-│ └── ProdutoViewModel.kt // ViewModel principal com estado das telas
+├── notifications/
+│ └── NotificationReceiver.kt // Novo: BroadcastReceiver para disparar as notificações agendadas
 │
-├── ui/ // Interface do usuário
-│ ├── components/ // Componentes reutilizáveis da UI
-│ │ ├── ProdutoCard.kt // Card visual dos produtos
-│ │ └── TopBar.kt // TopAppBar com logo (Texto) e menu
-│ │
-│ ├── screens/ // Telas principais do app
-│ │ ├── HomeScreen.kt // Tela inicial com busca e listagem
-│ │ ├── DetalhesScreen.kt // Tela de detalhes do produto
-│ │ ├── FavoritosScreen.kt // Tela com produtos favoritados
-│ │ ├── ConfiguracoesScreen.kt // Tela de preferências (modo escuro etc.)
-│ │ └── AjudaScreen.kt // Tela de perguntas frequentes e suporte
-│ │
-│ └── MainScreen.kt // Gerencia navegação e scaffold geral
+├── viewmodel/
+│ └── ProdutoViewModel.kt   // Lógica de busca e estado da tela principal
 │
-├── ui/theme/ // Tema visual do app
-│ └── AppTheme.kt // Tema dinâmico claro/escuro com Material 3
+├── ui/
+│ ├── components/           // Componentes reutilizáveis (ProdutoCard, TopBar)
+│ ├── screens/              // Telas do app (Home, Detalhes, Login, Cadastro, etc.)
+│ └── MainScreen.kt         // Gerencia a navegação principal com NavHost
 │
-└── MainActivity.kt // Ponto de entrada da aplicação
+├── ui/theme/
+│ └── Theme.kt              // Tema dinâmico claro/escuro com Material 3
+│
+└── MainActivity.kt         // Ponto de entrada, observa e provê o estado global (DataStore)
 ```
 
-- O gerenciamento de estado foi feito com `mutableStateOf` e `rememberSaveable`
-- A navegação entre telas é feita com `NavHost` e `NavController`
-- O tema claro/escuro é aplicado com `MaterialTheme` e `isSystemInDarkTheme`
+- **Gerenciamento de Estado:** O estado global (modo escuro, favoritos, notificações) é gerenciado na `MainActivity` e lido a partir do **Jetpack DataStore**. Esse estado é passado via parâmetros para os Composables, seguindo um fluxo de dados unidirecional.
+- **Notificações:** O agendamento é feito com `AlarmManager` na tela de detalhes, que ativa um `BroadcastReceiver` para criar e exibir a notificação no momento certo.
 
 ---
 
-## 7. Dificuldades Encontradas
-
-Durante o desenvolvimento deste projeto, algumas dificuldades técnicas e conceituais foram enfrentadas. Uma das principais foi a implementação de um modo escuro funcional que se aplicasse dinamicamente a todo o aplicativo. Foi necessário compreender bem o funcionamento do `MaterialTheme`, bem como como manipular estados globais em Compose.
-
-
-
-A construção do menu de três pontinhos também exigiu atenção especial, pois deveria estar presente em todas as telas principais e funcionar em conjunto com a navegação por `NavController`.
-
-Além disso, como o projeto foi desenvolvido individualmente, a carga de organização e execução das tarefas foi integralmente assumida por mim, o que exigiu bastante planejamento, disciplina e gerenciamento de tempo para cumprir os requisitos e manter a qualidade visual e técnica da aplicação.
-
-Por fim, minha maior dificuldade esteve no próprio desenvolvimento da aplicação. Esta foi minha primeira experiência prática utilizando o Android Studio, uma ferramenta robusta e que, para iniciantes, pode parecer complexa em vários aspectos — desde a estrutura de projeto até a configuração de dependências.
-
-Além disso, o uso da linguagem Kotlin também foi um desafio, já que nunca havia trabalhado com ela antes. Foi necessário aprender não só a sintaxe, mas também conceitos específicos como `State`, `Composable`, `Scaffold`, e a abordagem declarativa do Jetpack Compose, que difere bastante das abordagens mais tradicionais que eu estava acostumado.
-
-Apesar das dificuldades, considero que o processo foi extremamente valioso para o meu aprendizado e crescimento como desenvolvedor.
-
-
-
----
 
