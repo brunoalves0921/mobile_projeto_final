@@ -28,7 +28,7 @@ fun ConfiguracoesScreen(
             Switch(checked = notificacoes, onCheckedChange = { notificacoes = it })
         }
         Spacer(Modifier.height(16.dp))
-        Button(onClick = { viewModel.limparFavoritos() }) {
+        Button(onClick = { /* A lógica para limpar favoritos precisaria ser implementada aqui */ }) {
             Text("Limpar Favoritos")
         }
     }

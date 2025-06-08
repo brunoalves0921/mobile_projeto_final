@@ -53,6 +53,11 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    implementation("com.google.accompanist:accompanist-permissions:0.31.5-beta")
+
+    // Preferences DataStore
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     // Gson para salvar e ler dados JSON
     implementation("com.google.code.gson:gson:2.10.1")
 

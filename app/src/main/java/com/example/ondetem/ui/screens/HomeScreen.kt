@@ -39,25 +39,35 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (viewModel.busca.isBlank()) {
+        // Lógica para exibir o indicador ou a lista
+        if (viewModel.isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Digite algo para buscar produtos.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                )
+                CircularProgressIndicator()
             }
         } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 80.dp) // evita sobreposição com bottom bar
-            ) {
-                items(viewModel.produtos) { produto ->
-                    ProdutoCard(produto = produto) {
-                        onItemClick(produto.id)
+            if (viewModel.busca.isBlank()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Digite algo para buscar produtos.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                    )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
+                    items(viewModel.produtos) { produto ->
+                        ProdutoCard(produto = produto) {
+                            onItemClick(produto.id)
+                        }
                     }
                 }
             }

@@ -1,21 +1,29 @@
 package com.example.ondetem.ui
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.components.TopBar
 import com.example.ondetem.ui.screens.*
 import com.example.ondetem.viewmodel.ProdutoViewModel
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun MainScreen(
     viewModel: ProdutoViewModel,
     darkMode: Boolean,
-    onToggleDarkMode: () -> Unit
+    onToggleDarkMode: () -> Unit,
+    favoriteProducts: List<Produto>,
+    onToggleFavorite: (Produto) -> Unit
 ) {
     val navController = rememberNavController()
     val currentRoute = remember { mutableStateOf("home") }
@@ -64,7 +72,11 @@ fun MainScreen(
         NavHost(
             navController = navController,
             startDestination = "selecionar_perfil",
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn(animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
             composable("home") {
                 currentRoute.value = "home"
@@ -75,7 +87,7 @@ fun MainScreen(
             }
             composable("favoritos") {
                 currentRoute.value = "favoritos"
-                FavoritosScreen(viewModel) { id ->
+                FavoritosScreen(favoriteProducts = favoriteProducts) { id ->
                     navController.navigate("detalhes/$id")
                     currentRoute.value = "detalhes"
                 }
@@ -91,7 +103,12 @@ fun MainScreen(
             composable("detalhes/{id}") { backStackEntry ->
                 currentRoute.value = "detalhes"
                 val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
-                DetalhesScreen(produtoId = id, viewModel = viewModel)
+                // ESTA É A CHAMADA CORRETA. A DEFINIÇÃO DA FUNÇÃO NÃO DEVE ESTAR AQUI.
+                DetalhesScreen(
+                    produtoId = id,
+                    favoriteProducts = favoriteProducts,
+                    onToggleFavorite = onToggleFavorite
+                )
             }
             composable("selecionar_perfil") {
                 currentRoute.value = "selecionar_perfil"
@@ -101,7 +118,7 @@ fun MainScreen(
                         currentRoute.value = "home"
                     },
                     onSelecionarVendedor = {
-                        navController.navigate("login") // tela futura
+                        navController.navigate("login")
                         currentRoute.value = "login"
                     }
                 )
@@ -121,7 +138,6 @@ fun MainScreen(
                     }
                 )
             }
-
             composable("cadastro") {
                 currentRoute.value = "cadastro"
                 CadastroScreen(
