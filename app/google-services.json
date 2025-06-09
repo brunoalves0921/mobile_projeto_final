@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "763422215589",
+    "project_id": "ondetemappv2",
+    "storage_bucket": "ondetemappv2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763422215589:android:0c28f568e005259c9aec4c",
+        "android_client_info": {
+          "package_name": "com.example.ondetem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-rexNVyRbSptsHYBlG2f33mfz2X7JIPc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

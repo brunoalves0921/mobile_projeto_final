@@ -20,7 +20,6 @@ object LojaRepository {
         return Gson().fromJson(json, type) ?: emptyList()
     }
 
-    // NOVA FUNÇÃO ADICIONADA
     fun listarTodas(context: Context): List<Loja> {
         return getLojas(context)
     }
@@ -33,6 +32,9 @@ object LojaRepository {
     }
 
     fun getLojasPorVendedor(context: Context, email: String): List<Loja> {
-        return getLojas(context).filter { it.donoEmail == email }
+        // AQUI ESTÁ A CORREÇÃO:
+        // Trocamos `it.donoEmail` por `it.donoId` para corresponder ao modelo de dados.
+        // O parâmetro `email` agora, na verdade, contém o ID do vendedor (uid).
+        return getLojas(context).filter { it.donoId == email }
     }
 }

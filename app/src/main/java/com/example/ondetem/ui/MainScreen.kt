@@ -71,53 +71,63 @@ fun MainScreen(
             composable("ajuda") { currentRoute.value = "ajuda"; AjudaScreen() }
             composable("detalhes/{id}") { backStackEntry -> currentRoute.value = "detalhes"; val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable; DetalhesScreen(id, viewModel, favoriteProducts, onToggleFavorite, areNotificationsEnabled) }
             composable("selecionar_perfil") { currentRoute.value = "selecionar_perfil"; RoleSelectionScreen({ navController.navigate("home") { popUpTo("selecionar_perfil") { inclusive = true } }; currentRoute.value = "home" }, { navController.navigate("login"); currentRoute.value = "login" }) }
-            composable("login") { currentRoute.value = "login"; LoginScreen({ email -> navController.navigate("perfil_vendedor/$email") { popUpTo("selecionar_perfil") { inclusive = true } }; currentRoute.value = "perfil_vendedor" }, { navController.navigate("cadastro"); currentRoute.value = "cadastro" }) }
-            composable("cadastro") { currentRoute.value = "cadastro"; CadastroScreen({ navController.navigate("login") { popUpTo("cadastro") { inclusive = true } }; currentRoute.value = "login" }, { navController.popBackStack(); currentRoute.value = "login" }) }
-            composable("perfil_vendedor/{email}") { backStackEntry -> currentRoute.value = "perfil_vendedor"; val email = backStackEntry.arguments?.getString("email") ?: ""; PerfilVendedorScreen(email, { navController.navigate("cadastro_loja/$email"); currentRoute.value = "cadastro_loja" }, { navController.navigate("selecionar_perfil") { popUpTo(navController.graph.startDestinationId) { inclusive = true } }; navController.navigate("selecionar_perfil"); currentRoute.value = "selecionar_perfil" }, { nomeLoja -> val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString()); navController.navigate("detalhes_loja/$encodedNomeLoja"); currentRoute.value = "detalhes_loja" }) }
-            composable("cadastro_loja/{vendedorEmail}") { backStackEntry -> currentRoute.value = "cadastro_loja"; val email = backStackEntry.arguments?.getString("vendedorEmail") ?: ""; CadastroLojaScreen(email) { navController.popBackStack(); currentRoute.value = "perfil_vendedor" } }
 
-            // ROTA ATUALIZADA
-            composable("detalhes_loja/{nomeLoja}") { backStackEntry ->
-                currentRoute.value = "detalhes_loja"
-                val nomeLoja = backStackEntry.arguments?.getString("nomeLoja") ?: ""
-                DetalhesLojaScreen(
-                    nomeLoja = nomeLoja,
-                    onAddProduto = {
-                        val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString())
-                        navController.navigate("cadastro_produto/$encodedNomeLoja")
-                        currentRoute.value = "cadastro_produto"
+            composable("login") {
+                currentRoute.value = "login"
+                LoginScreen(
+                    onLoginSucesso = {
+                        navController.navigate("perfil_vendedor") {
+                            popUpTo("selecionar_perfil") { inclusive = true }
+                        }
+                        currentRoute.value = "perfil_vendedor"
                     },
-                    onEditProduto = { produtoId -> // Navega para a nova tela de edição
-                        navController.navigate("editar_produto/$produtoId")
-                        currentRoute.value = "editar_produto"
+                    onIrParaCadastro = {
+                        navController.navigate("cadastro")
+                        currentRoute.value = "cadastro"
                     }
                 )
             }
 
-            // ROTA ATUALIZADA
-            composable("cadastro_produto/{nomeLoja}") { backStackEntry ->
-                currentRoute.value = "cadastro_produto"
-                val nomeLoja = backStackEntry.arguments?.getString("nomeLoja")
-                CadastroProdutoScreen(
-                    nomeLoja = nomeLoja,
-                    produtoId = null, // Modo de adição
-                    onProdutoSalvo = { navController.popBackStack(); currentRoute.value = "detalhes_loja" }
+            composable("cadastro") { currentRoute.value = "cadastro"; CadastroScreen({ navController.navigate("login") { popUpTo("cadastro") { inclusive = true } }; currentRoute.value = "login" }, { navController.popBackStack(); currentRoute.value = "login" }) }
+
+            composable("perfil_vendedor") {
+                currentRoute.value = "perfil_vendedor"
+                PerfilVendedorScreen(
+                    onCadastrarLoja = { vendedorId ->
+                        navController.navigate("cadastro_loja/$vendedorId")
+                        currentRoute.value = "cadastro_loja"
+                    },
+                    onLogout = {
+                        navController.navigate("selecionar_perfil") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                        navController.navigate("selecionar_perfil")
+                        currentRoute.value = "selecionar_perfil"
+                    },
+                    onLojaClick = { nomeLoja -> val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString()); navController.navigate("detalhes_loja/$encodedNomeLoja"); currentRoute.value = "detalhes_loja" }
                 )
             }
 
-            // NOVA ROTA DE EDIÇÃO
+            // ROTA DE CADASTRO DE LOJA CORRIGIDA
             composable(
-                "editar_produto/{produtoId}",
-                arguments = listOf(navArgument("produtoId") { type = NavType.IntType })
+                route = "cadastro_loja/{vendedorId}",
+                arguments = listOf(navArgument("vendedorId") { type = NavType.StringType })
             ) { backStackEntry ->
-                currentRoute.value = "editar_produto"
-                val produtoId = backStackEntry.arguments?.getInt("produtoId")
-                CadastroProdutoScreen(
-                    nomeLoja = null, // Não é necessário no modo de edição
-                    produtoId = produtoId, // Passa o ID para o modo de edição
-                    onProdutoSalvo = { navController.popBackStack(); currentRoute.value = "detalhes_loja" }
+                currentRoute.value = "cadastro_loja"
+                val vendedorId = backStackEntry.arguments?.getString("vendedorId") ?: ""
+                // AGORA a chamada está correta, mas a TELA precisa ser ajustada.
+                CadastroLojaScreen(
+                    vendedorEmail = vendedorId, // Mantenha este nome, vamos ajustar a tela
+                    onLojaCadastrada = {
+                        navController.popBackStack()
+                        currentRoute.value = "perfil_vendedor"
+                    }
                 )
             }
+
+            composable("detalhes_loja/{nomeLoja}") { backStackEntry -> currentRoute.value = "detalhes_loja"; val nomeLoja = backStackEntry.arguments?.getString("nomeLoja") ?: ""; DetalhesLojaScreen(nomeLoja = nomeLoja, onAddProduto = { val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString()); navController.navigate("cadastro_produto/$encodedNomeLoja"); currentRoute.value = "cadastro_produto" }, onEditProduto = { produtoId -> navController.navigate("editar_produto/$produtoId"); currentRoute.value = "editar_produto" }) }
+            composable("cadastro_produto/{nomeLoja}") { backStackEntry -> currentRoute.value = "cadastro_produto"; val nomeLoja = backStackEntry.arguments?.getString("nomeLoja"); CadastroProdutoScreen(nomeLoja = nomeLoja, produtoId = null, onProdutoSalvo = { navController.popBackStack(); currentRoute.value = "detalhes_loja" }) }
+            composable("editar_produto/{produtoId}", arguments = listOf(navArgument("produtoId") { type = NavType.IntType })) { backStackEntry -> currentRoute.value = "editar_produto"; val produtoId = backStackEntry.arguments?.getInt("produtoId"); CadastroProdutoScreen(nomeLoja = null, produtoId = produtoId, onProdutoSalvo = { navController.popBackStack(); currentRoute.value = "detalhes_loja" }) }
         }
     }
 }

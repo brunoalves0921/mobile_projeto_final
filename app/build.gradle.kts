@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // ADICIONE ESTA LINHA:
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -29,12 +31,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // MUDE A VERSÃO DO JAVA PARA 1.8, É MAIS COMPATÍVEL COM BIBLIOTECAS ANTIGAS
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "1.8" // MUDE AQUI TAMBÉM
     }
 
     buildFeatures {
@@ -53,22 +56,35 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    // --- DEPENDÊNCIAS DO FIREBASE ---
+    // Importa a Bill of Materials (BoM) para gerenciar as versões
+    implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
+    // Autenticação
+    implementation("com.google.firebase:firebase-auth")
+    // Banco de Dados Firestore
+    implementation("com.google.firebase:firebase-firestore")
+    // Armazenamento de Mídia
+    implementation("com.google.firebase:firebase-storage")
+    // Biblioteca de ajuda para usar Coroutines com Firebase
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    // --- FIM DAS DEPENDÊNCIAS DO FIREBASE ---
+
     implementation("com.google.accompanist:accompanist-permissions:0.31.5-beta")
 
     // Preferences DataStore
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1") // Versão atualizada
 
     // Gson para salvar e ler dados JSON
     implementation("com.google.code.gson:gson:2.10.1")
 
-    // Corrige navegação (jvmstubs parece erro de resolução)
-    implementation("androidx.navigation:navigation-compose:2.7.3")
+    // Navegação
+    implementation("androidx.navigation:navigation-compose:2.7.7") // Versão atualizada
 
-    // Coil para carregar imagens dos produtos
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    // Coil para carregar imagens
+    implementation("io.coil-kt:coil-compose:2.6.0") // Versão atualizada
 
-    // Suporte para VideoView via AndroidView (já vem com Compose Foundation)
-    implementation("androidx.compose.foundation:foundation:1.5.1")
+    // Suporte para VideoView
+    implementation("androidx.compose.foundation:foundation:1.6.8") // Versão atualizada
 
     // Testes
     testImplementation(libs.junit)

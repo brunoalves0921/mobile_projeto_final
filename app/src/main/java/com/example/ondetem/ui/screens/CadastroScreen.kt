@@ -1,16 +1,21 @@
 package com.example.ondetem.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.ondetem.data.Vendedor
-import com.example.ondetem.data.VendedorRepository
-import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun CadastroScreen(
@@ -20,94 +25,104 @@ fun CadastroScreen(
     var nome by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
-    var confirmarSenha by remember { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    // Instância do Firebase Auth
+    val auth = FirebaseAuth.getInstance()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(32.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Cadastro do Vendedor", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(24.dp))
+        Text("Cadastro de Vendedor", style = MaterialTheme.typography.headlineLarge)
+        Spacer(Modifier.height(32.dp))
 
         OutlinedTextField(
             value = nome,
             onValueChange = { nome = it },
-            label = { Text("Nome") },
+            label = { Text("Nome Completo") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(8.dp))
-
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("E-mail") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
         Spacer(Modifier.height(8.dp))
-
         OutlinedTextField(
             value = senha,
             onValueChange = { senha = it },
             label = { Text("Senha") },
+            modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(24.dp))
 
-        OutlinedTextField(
-            value = confirmarSenha,
-            onValueChange = { confirmarSenha = it },
-            label = { Text("Confirmar Senha") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(Modifier.height(16.dp))
+        if (isLoading) {
+            CircularProgressIndicator()
+        } else {
+            Button(
+                onClick = {
+                    if (nome.isNotBlank() && email.isNotBlank() && senha.isNotBlank()) {
+                        isLoading = true
+                        // 1. Cria o usuário no Firebase Authentication
+                        auth.createUserWithEmailAndPassword(email.trim(), senha.trim())
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    val firebaseUser = auth.currentUser
+                                    val uid = firebaseUser?.uid
+                                    if (uid != null) {
+                                        // 2. Cria o objeto Vendedor com os dados
+                                        val novoVendedor = Vendedor(
+                                            uid = uid,
+                                            nome = nome,
+                                            email = email.trim()
+                                        )
 
-        Button(
-            onClick = {
-                val nomeLimpo = nome.trim()
-                val emailLimpo = email.trim()
-                val senhaLimpa = senha.trim()
-                val confirmarSenhaLimpa = confirmarSenha.trim()
-
-                val emailValido = android.util.Patterns.EMAIL_ADDRESS.matcher(emailLimpo).matches()
-                val senhaValida = senhaLimpa.length >= 6 && !senhaLimpa.contains(" ")
-
-                if (nomeLimpo.isBlank()) {
-                    scope.launch { snackbarHostState.showSnackbar("Informe seu nome.") }
-                } else if (!emailValido) {
-                    scope.launch { snackbarHostState.showSnackbar("E-mail inválido.") }
-                } else if (!senhaValida) {
-                    scope.launch { snackbarHostState.showSnackbar("A senha deve ter no mínimo 6 caracteres e não conter espaços.") }
-                } else if (senhaLimpa != confirmarSenhaLimpa) {
-                    scope.launch { snackbarHostState.showSnackbar("As senhas não coincidem.") }
-                } else if (VendedorRepository.emailJaCadastrado(context, emailLimpo)) {
-                    scope.launch { snackbarHostState.showSnackbar("E-mail já cadastrado.") }
-                } else {
-                    VendedorRepository.salvar(context, Vendedor(nomeLimpo, emailLimpo, senhaLimpa))
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Cadastro realizado com sucesso!")
-                        onCadastroSucesso()
+                                        // 3. Salva os dados do vendedor no Firestore
+                                        val db = FirebaseFirestore.getInstance()
+                                        db.collection("vendedores").document(uid)
+                                            .set(novoVendedor)
+                                            .addOnSuccessListener {
+                                                isLoading = false
+                                                Toast.makeText(context, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                                                onCadastroSucesso()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                isLoading = false
+                                                Toast.makeText(context, "Erro ao salvar dados: ${e.message}", Toast.LENGTH_LONG).show()
+                                            }
+                                    }
+                                } else {
+                                    isLoading = false
+                                    // Mostra o erro do Firebase (ex: senha fraca, email já existe)
+                                    val exception = task.exception
+                                    Toast.makeText(context, "Falha no cadastro: ${exception?.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                    } else {
+                        Toast.makeText(context, "Por favor, preencha todos os campos.", Toast.LENGTH_SHORT).show()
                     }
-                }
-
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Cadastrar")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cadastrar")
+            }
+            TextButton(
+                onClick = onVoltarParaLogin,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Já tem uma conta? Faça o login")
+            }
         }
-
-        TextButton(onClick = onVoltarParaLogin) {
-            Text("Já tem uma conta? Fazer login")
-        }
-
-        Spacer(Modifier.height(8.dp))
-        SnackbarHost(snackbarHostState)
     }
 }
