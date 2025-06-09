@@ -5,14 +5,9 @@ import kotlinx.coroutines.tasks.await
 
 object LojaRepository {
 
-    // Instância do banco de dados Firestore
     private val db = FirebaseFirestore.getInstance()
     private val lojasCollection = db.collection("lojas")
 
-    /**
-     * Busca todas as lojas de um vendedor específico no Firestore.
-     * Usa 'await' de Coroutines para trabalhar de forma assíncrona.
-     */
     suspend fun getLojasPorVendedor(vendedorId: String): List<Loja> {
         return try {
             val snapshot = lojasCollection
@@ -21,18 +16,23 @@ object LojaRepository {
                 .await()
             snapshot.toObjects(Loja::class.java)
         } catch (e: Exception) {
-            // Em caso de erro, retorna uma lista vazia
             emptyList()
         }
     }
 
     /**
-     * Salva uma nova loja no Firestore.
+     * Busca uma loja única pelo seu ID de documento.
+     * Esta é a função que o erro diz não encontrar.
      */
+    suspend fun getLojaPorId(lojaId: String): Loja? {
+        return try {
+            lojasCollection.document(lojaId).get().await().toObject(Loja::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun salvar(loja: Loja) {
         lojasCollection.add(loja).await()
     }
-
-    // Funções antigas que usavam arquivos locais podem ser removidas ou comentadas,
-    // pois não serão mais utilizadas.
 }
