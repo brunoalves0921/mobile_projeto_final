@@ -12,46 +12,45 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.ondetem.data.Loja
+import com.example.ondetem.data.LojaRepository
 import com.example.ondetem.data.Vendedor
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilVendedorScreen(
-    onCadastrarLoja: (String) -> Unit, // Passa o ID do vendedor
+    onCadastrarLoja: (String) -> Unit,
     onLogout: () -> Unit,
-    onLojaClick: (String) -> Unit
+    onLojaClick: (String) -> Unit // Passa o ID da loja
 ) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
-    // Estados para guardar os dados do vendedor e suas lojas
     var vendedor by remember { mutableStateOf<Vendedor?>(null) }
     var lojas by remember { mutableStateOf<List<Loja>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Efeito para buscar os dados do Firestore quando a tela é aberta
+    // Efeito que busca os dados do Firestore quando a tela é aberta
     LaunchedEffect(Unit) {
         val currentUser = auth.currentUser
         if (currentUser == null) {
-            // Se por algum motivo não houver usuário logado, volta para a tela de login
-            onLogout()
+            onLogout() // Se não há usuário, desloga
             return@LaunchedEffect
         }
 
         val uid = currentUser.uid
 
-        // Busca os dados do vendedor
         try {
+            // Busca os dados do vendedor no documento com seu UID
             val vendedorDoc = db.collection("vendedores").document(uid).get().await()
             vendedor = vendedorDoc.toObject(Vendedor::class.java)
 
-            // Busca as lojas deste vendedor
-            val lojasSnapshot = db.collection("lojas").whereEqualTo("donoId", uid).get().await()
-            lojas = lojasSnapshot.toObjects(Loja::class.java)
+            // Busca as lojas usando o novo LojaRepository
+            lojas = LojaRepository.getLojasPorVendedor(uid)
 
         } catch (e: Exception) {
             Toast.makeText(context, "Erro ao buscar dados: ${e.message}", Toast.LENGTH_LONG).show()
@@ -66,7 +65,7 @@ fun PerfilVendedorScreen(
                 title = { Text("Perfil do Vendedor") },
                 actions = {
                     TextButton(onClick = {
-                        auth.signOut() // Realiza o logout no Firebase
+                        auth.signOut()
                         onLogout()
                     }) {
                         Text("Logout")
@@ -102,11 +101,12 @@ fun PerfilVendedorScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onLojaClick(loja.nome) },
+                                    .clickable { onLojaClick(loja.id) }, // Navega usando o ID da loja
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(Modifier.padding(16.dp)) {
                                     Text(loja.nome, style = MaterialTheme.typography.titleMedium)
+                                    Text(loja.endereco, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }

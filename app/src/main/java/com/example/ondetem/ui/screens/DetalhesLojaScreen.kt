@@ -12,43 +12,49 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.ondetem.data.LojaRepository
+import com.example.ondetem.data.Produto
 import com.example.ondetem.data.ProdutoRepository
 import com.example.ondetem.ui.components.ProdutoCard
+import kotlinx.coroutines.launch
 
 @Composable
 fun DetalhesLojaScreen(
-    nomeLoja: String,
+    lojaId: String,
     onAddProduto: () -> Unit,
-    onEditProduto: (Int) -> Unit // Nova ação para editar
+    onEditProduto: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    val loja = LojaRepository.listarTodas(context).firstOrNull { it.nome == nomeLoja }
+    val scope = rememberCoroutineScope()
+    var produtosDaLoja by remember { mutableStateOf<List<Produto>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var showDialog by remember { mutableStateOf<Produto?>(null) }
 
-    // --- LÓGICA ATUALIZADA PARA PERMITIR ATUALIZAÇÃO DA LISTA ---
-    var produtosDaLoja by remember { mutableStateOf(ProdutoRepository.getProdutosPorLoja(context, nomeLoja)) }
-    var showDialog by remember { mutableStateOf<Int?>(null) } // Guarda o ID do produto a ser deletado
+    LaunchedEffect(lojaId) {
+        isLoading = true
+        produtosDaLoja = ProdutoRepository.getProdutosPorLoja(lojaId)
+        isLoading = false
+    }
 
-    // Diálogo de confirmação para deletar
     if (showDialog != null) {
         AlertDialog(
             onDismissRequest = { showDialog = null },
             title = { Text("Confirmar Exclusão") },
-            text = { Text("Você tem certeza que deseja deletar este produto? Esta ação não pode ser desfeita.") },
+            text = { Text("Deseja realmente deletar o produto '${showDialog?.nome}'?") },
             confirmButton = {
                 Button(
                     onClick = {
-                        ProdutoRepository.deletar(context, showDialog!!)
-                        // Atualiza a lista na tela após deletar
-                        produtosDaLoja = ProdutoRepository.getProdutosPorLoja(context, nomeLoja)
-                        showDialog = null
+                        scope.launch {
+                            isLoading = true
+                            ProdutoRepository.deletar(showDialog!!)
+                            // Atualiza a lista na tela
+                            produtosDaLoja = ProdutoRepository.getProdutosPorLoja(lojaId)
+                            showDialog = null
+                            isLoading = false
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) { Text("Deletar") }
             },
-            dismissButton = {
-                TextButton(onClick = { showDialog = null }) { Text("Cancelar") }
-            }
+            dismissButton = { TextButton(onClick = { showDialog = null }) { Text("Cancelar") } }
         )
     }
 
@@ -59,41 +65,23 @@ fun DetalhesLojaScreen(
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)
-        ) {
-            if (loja != null) {
-                Text(loja.nome, style = MaterialTheme.typography.headlineMedium)
-                Text(loja.endereco, style = MaterialTheme.typography.bodyLarge)
-                Text(loja.telefone, style = MaterialTheme.typography.bodyMedium)
-            }
-            Spacer(Modifier.height(24.dp))
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             Text("Produtos da Loja", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(16.dp))
 
-            if (produtosDaLoja.isEmpty()) {
+            if (produtosDaLoja.isEmpty() && !isLoading) {
                 Text("Nenhum produto cadastrado nesta loja ainda.")
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     items(produtosDaLoja) { produto ->
                         Column {
-                            ProdutoCard(produto = produto, onClick = { /* Não faz nada */ })
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
+                            ProdutoCard(produto = produto, onClick = { /* Ação de clique para cliente */ })
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                 TextButton(onClick = { onEditProduto(produto.id) }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Editar")
+                                    Icon(Icons.Default.Edit, "Editar", Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Editar")
                                 }
-                                TextButton(onClick = { showDialog = produto.id }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Deletar", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Deletar", color = MaterialTheme.colorScheme.error)
+                                TextButton(onClick = { showDialog = produto }) {
+                                    Icon(Icons.Default.Delete, "Deletar", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error); Spacer(Modifier.width(4.dp)); Text("Deletar", color = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }

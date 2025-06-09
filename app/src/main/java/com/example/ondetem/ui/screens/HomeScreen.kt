@@ -17,10 +17,8 @@ import com.example.ondetem.ui.components.ProdutoCard
 import com.example.ondetem.viewmodel.ProdutoViewModel
 
 @Composable
-fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
+fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) { // <-- CORREÇÃO: MUDADO DE INT PARA STRING
 
-    // NOVO: LaunchedEffect para recarregar os produtos sempre que a tela for exibida.
-    // A chave `true` garante que ele rode apenas uma vez quando a tela entra na composição.
     LaunchedEffect(true) {
         viewModel.carregarTodosOsProdutos()
     }
@@ -40,7 +38,7 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { /* Fechar teclado se quiser */ })
+            keyboardActions = KeyboardActions(onSearch = { /* Ação de busca no teclado */ })
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -53,7 +51,6 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
                 CircularProgressIndicator()
             }
         } else {
-            // Alterado para mostrar uma mensagem diferente se a busca não retornar nada
             if (viewModel.produtos.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -72,7 +69,7 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
                 ) {
                     items(viewModel.produtos) { produto ->
                         ProdutoCard(produto = produto) {
-                            onItemClick(produto.id)
+                            onItemClick(produto.id) // produto.id agora é uma String
                         }
                     }
                 }

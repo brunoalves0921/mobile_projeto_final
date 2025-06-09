@@ -1,83 +1,98 @@
 package com.example.ondetem.data
 
 import android.content.Context
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import android.net.Uri
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.tasks.await
 import java.io.File
 
 object ProdutoRepository {
-    private const val FILE_NAME = "produtos_vendedor.json"
 
-    private fun getFile(context: Context): File {
-        return File(context.filesDir, FILE_NAME)
-    }
+    private val db = FirebaseFirestore.getInstance()
+    private val storage = FirebaseStorage.getInstance()
+    private val produtosCollection = db.collection("produtos")
 
-    private fun getProdutos(context: Context): List<Produto> {
-        val file = getFile(context)
-        if (!file.exists()) return emptyList()
-        val json = file.readText()
-        val type = object : TypeToken<List<Produto>>() {}.type
-        return Gson().fromJson(json, type) ?: emptyList()
-    }
-
-    // --- FUNÇÕES NOVAS E ATUALIZADAS ---
-
-    fun listarTodos(context: Context): List<Produto> {
-        return getProdutos(context)
-    }
-
-    fun getProdutosPorLoja(context: Context, nomeLoja: String): List<Produto> {
-        return getProdutos(context).filter { it.loja.equals(nomeLoja, ignoreCase = true) }
+    /**
+     * Busca todos os produtos do Firestore. Usado pela tela do cliente.
+     */
+    suspend fun listarTodos(): List<Produto> {
+        return try {
+            val snapshot = produtosCollection.get().await()
+            snapshot.toObjects(Produto::class.java)
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     /**
-     * NOVA FUNÇÃO: Busca um produto específico pelo seu ID.
+     * Busca os produtos de uma loja específica pelo seu ID.
      */
-    fun getProdutoPorId(context: Context, produtoId: Int): Produto? {
-        return getProdutos(context).firstOrNull { it.id == produtoId }
-    }
-
-    fun salvar(context: Context, produto: Produto) {
-        val produtos = getProdutos(context).toMutableList()
-        produtos.add(produto)
-        val json = Gson().toJson(produtos)
-        getFile(context).writeText(json)
+    suspend fun getProdutosPorLoja(lojaId: String): List<Produto> {
+        return try {
+            val snapshot = produtosCollection.whereEqualTo("lojaId", lojaId).get().await()
+            snapshot.toObjects(Produto::class.java)
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     /**
-     * NOVA FUNÇÃO: Deleta um produto do arquivo JSON.
-     * Também deleta os arquivos de imagem e vídeo associados.
+     * Busca um único produto pelo seu ID de documento.
      */
-    fun deletar(context: Context, produtoId: Int) {
-        val produtos = getProdutos(context).toMutableList()
-        val produtoParaDeletar = produtos.firstOrNull { it.id == produtoId }
+    suspend fun getProdutoPorId(produtoId: String): Produto? {
+        return try {
+            val snapshot = produtosCollection.document(produtoId).get().await()
+            snapshot.toObject(Produto::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
-        if (produtoParaDeletar != null) {
-            // Deleta o arquivo de imagem, se existir
-            if (produtoParaDeletar.imagemUrl.isNotBlank()) {
-                try { File(produtoParaDeletar.imagemUrl).delete() } catch (e: Exception) { /* Ignora erros */ }
-            }
-            // Deleta o arquivo de vídeo, se existir
-            if (produtoParaDeletar.videoUrl.isNotBlank()) {
-                try { File(produtoParaDeletar.videoUrl).delete() } catch (e: Exception) { /* Ignora erros */ }
+    /**
+     * Deleta um produto do Firestore e suas mídias do Cloud Storage.
+     */
+    suspend fun deletar(produto: Produto) {
+        // Deleta o documento do Firestore
+        produtosCollection.document(produto.id).delete().await()
+
+        // Deleta a imagem do Storage, se existir
+        if (produto.imagemUrl.isNotBlank()) {
+            try {
+                storage.getReferenceFromUrl(produto.imagemUrl).delete().await()
+            } catch (e: Exception) { /* Ignora erro se o arquivo não existir */
             }
         }
-
-        produtos.removeAll { it.id == produtoId }
-        val json = Gson().toJson(produtos)
-        getFile(context).writeText(json)
+        // Deleta o vídeo do Storage, se existir
+        if (produto.videoUrl.isNotBlank()) {
+            try {
+                storage.getReferenceFromUrl(produto.videoUrl).delete().await()
+            } catch (e: Exception) { /* Ignora erro se o arquivo não existir */
+            }
+        }
     }
 
     /**
-     * NOVA FUNÇÃO: Atualiza um produto existente no arquivo JSON.
+     * Atualiza um documento de produto no Firestore.
      */
-    fun atualizar(context: Context, produtoAtualizado: Produto) {
-        val produtos = getProdutos(context).toMutableList()
-        val index = produtos.indexOfFirst { it.id == produtoAtualizado.id }
-        if (index != -1) {
-            produtos[index] = produtoAtualizado
-            val json = Gson().toJson(produtos)
-            getFile(context).writeText(json)
-        }
+    suspend fun atualizar(produtoAtualizado: Produto) {
+        produtosCollection.document(produtoAtualizado.id).set(produtoAtualizado).await()
+    }
+
+    /**
+     * Salva um novo produto no Firestore.
+     */
+    suspend fun salvar(produto: Produto) {
+        produtosCollection.add(produto).await()
+    }
+
+    /**
+     * Faz o upload de um arquivo (imagem ou vídeo) para o Cloud Storage.
+     * @return A URL de download permanente do arquivo.
+     */
+    suspend fun uploadMedia(uri: Uri, path: String): String {
+        val storageRef = storage.reference.child("$path/${System.currentTimeMillis()}")
+        val uploadTask = storageRef.putFile(uri).await()
+        return uploadTask.storage.downloadUrl.await().toString()
     }
 }

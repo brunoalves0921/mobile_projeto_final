@@ -56,6 +56,11 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    // --- ADICIONE ESTAS DUAS LINHAS PARA O PLAYER DE VÍDEO ---
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
+    // --- FIM DA ADIÇÃO ---
+
     // --- DEPENDÊNCIAS DO FIREBASE ---
     // Importa a Bill of Materials (BoM) para gerenciar as versões
     implementation(platform("com.google.firebase:firebase-bom:33.15.0"))

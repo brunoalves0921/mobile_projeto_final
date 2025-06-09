@@ -1,6 +1,5 @@
 package com.example.ondetem.ui.screens
 
-import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,58 +17,46 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil.compose.AsyncImage
-import com.example.ondetem.data.LojaRepository
 import com.example.ondetem.data.Produto
 import com.example.ondetem.data.ProdutoRepository
+import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
-import kotlin.random.Random
-
-private fun copyUriToInternalStorage(context: Context, uri: Uri, fileExtension: String): String? {
-    return try {
-        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-        val fileName = "produto_${System.currentTimeMillis()}.$fileExtension"
-        val file = File(context.filesDir, fileName)
-        val outputStream = FileOutputStream(file)
-        inputStream?.use { input -> outputStream.use { output -> input.copyTo(output) } }
-        file.absolutePath
-    } catch (e: Exception) {
-        e.printStackTrace()
-        Toast.makeText(context, "Falha ao copiar o arquivo.", Toast.LENGTH_SHORT).show()
-        null
-    }
-}
 
 @Composable
 fun CadastroProdutoScreen(
-    nomeLoja: String?, // Pode ser nulo no modo de edição
-    produtoId: Int?,   // Se não for nulo, estamos em modo de edição
+    lojaId: String?,   // Recebe o ID da loja para novos produtos
+    produtoId: String?, // Recebe o ID do produto para edição
     onProdutoSalvo: () -> Unit
 ) {
-    // --- LÓGICA ATUALIZADA PARA LIDAR COM ADIÇÃO E EDIÇÃO ---
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val isEditMode = produtoId != null
 
+    // Estados dos campos do formulário
     var produtoCarregado by remember { mutableStateOf<Produto?>(null) }
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
     var preco by remember { mutableStateOf("") }
+    var lojaNome by remember { mutableStateOf("") }
+
+    // Estados para as URIs das mídias
     var imagemUri by remember { mutableStateOf<Uri?>(null) }
     var videoUri by remember { mutableStateOf<Uri?>(null) }
+    var isLoading by remember { mutableStateOf(isEditMode) } // Mostra loading se estiver em modo de edição
 
-    // Efeito que roda uma vez se estiver em modo de edição para carregar os dados
-    LaunchedEffect(isEditMode) {
+    // Carrega os dados do produto se estiver em modo de edição
+    LaunchedEffect(produtoId) {
         if (isEditMode && produtoId != null) {
-            val produto = ProdutoRepository.getProdutoPorId(context, produtoId)
-            if (produto != null) {
-                produtoCarregado = produto
-                nome = produto.nome
-                descricao = produto.descricao
-                preco = produto.preco
-                if (produto.imagemUrl.isNotBlank()) imagemUri = File(produto.imagemUrl).toUri()
-                if (produto.videoUrl.isNotBlank()) videoUri = File(produto.videoUrl).toUri()
+            produtoCarregado = ProdutoRepository.getProdutoPorId(produtoId)
+            produtoCarregado?.let {
+                nome = it.nome
+                descricao = it.descricao
+                preco = it.preco
+                lojaNome = it.lojaNome
+                if (it.imagemUrl.isNotBlank()) imagemUri = it.imagemUrl.toUri()
+                if (it.videoUrl.isNotBlank()) videoUri = it.videoUrl.toUri()
             }
+            isLoading = false
         }
     }
 
@@ -91,7 +78,7 @@ fun CadastroProdutoScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (isEditMode) "Editar Produto" else "Adicionar Produto à Loja",
+            text = if (isEditMode) "Editar Produto" else "Adicionar Produto",
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 24.dp)
         )
@@ -108,49 +95,60 @@ fun CadastroProdutoScreen(
             Spacer(Modifier.height(8.dp))
         }
 
-        OutlinedButton(onClick = { seletorDeImagem.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.fillMaxWidth()) {
-            Text(if (imagemUri == null) "Selecionar Imagem da Galeria" else "Trocar Imagem")
-        }
+        OutlinedButton(onClick = { seletorDeImagem.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.fillMaxWidth()) { Text(if (imagemUri == null) "Selecionar Imagem" else "Trocar Imagem") }
         Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = { seletorDeVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)) }, modifier = Modifier.fillMaxWidth()) {
-            Text(if (videoUri == null) "Selecionar Vídeo da Galeria" else "Trocar Vídeo")
-        }
+        OutlinedButton(onClick = { seletorDeVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)) }, modifier = Modifier.fillMaxWidth()) { Text(if (videoUri == null) "Selecionar Vídeo" else "Trocar Vídeo") }
         if (videoUri != null) Text("Vídeo selecionado!", style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(24.dp))
 
         Button(
             onClick = {
                 if (nome.isNotBlank() && descricao.isNotBlank() && preco.isNotBlank()) {
-                    // --- LÓGICA DE SALVAMENTO ATUALIZADA ---
-                    val caminhoDaImagem = imagemUri?.let { if (!it.toString().startsWith("file://")) copyUriToInternalStorage(context, it, "jpg") else it.path }
-                    val caminhoDoVideo = videoUri?.let { if (!it.toString().startsWith("file://")) copyUriToInternalStorage(context, it, "mp4") else it.path }
+                    isLoading = true
+                    scope.launch {
+                        try {
+                            var imagemUrlFinal = produtoCarregado?.imagemUrl ?: ""
+                            var videoUrlFinal = produtoCarregado?.videoUrl ?: ""
 
-                    if (isEditMode) { // MODO DE EDIÇÃO
-                        val produtoAtualizado = produtoCarregado!!.copy(
-                            nome = nome,
-                            descricao = descricao,
-                            preco = preco,
-                            imagemUrl = caminhoDaImagem ?: "",
-                            videoUrl = caminhoDoVideo ?: ""
-                        )
-                        ProdutoRepository.atualizar(context, produtoAtualizado)
-                        Toast.makeText(context, "Produto atualizado!", Toast.LENGTH_SHORT).show()
-                    } else { // MODO DE ADIÇÃO
-                        val loja = LojaRepository.listarTodas(context).firstOrNull { it.nome == nomeLoja }
-                        if (loja != null) {
-                            val novoProduto = Produto(id = Random.nextInt(), nome = nome, descricao = descricao, preco = preco, loja = nomeLoja!!, endereco = loja.endereco, telefone = loja.telefone, imagemUrl = caminhoDaImagem ?: "", videoUrl = caminhoDoVideo ?: "")
-                            ProdutoRepository.salvar(context, novoProduto)
-                            Toast.makeText(context, "Produto cadastrado!", Toast.LENGTH_SHORT).show()
+                            // Faz upload da nova imagem se uma foi selecionada
+                            if (imagemUri != null && imagemUri.toString() != produtoCarregado?.imagemUrl) {
+                                imagemUrlFinal = ProdutoRepository.uploadMedia(imagemUri!!, "imagens_produtos")
+                            }
+                            // Faz upload do novo vídeo se um foi selecionado
+                            if (videoUri != null && videoUri.toString() != produtoCarregado?.videoUrl) {
+                                videoUrlFinal = ProdutoRepository.uploadMedia(videoUri!!, "videos_produtos")
+                            }
+
+                            if (isEditMode) { // MODO DE EDIÇÃO
+                                val produtoAtualizado = produtoCarregado!!.copy(
+                                    nome = nome, descricao = descricao, preco = preco,
+                                    imagemUrl = imagemUrlFinal, videoUrl = videoUrlFinal
+                                )
+                                ProdutoRepository.atualizar(produtoAtualizado)
+                                Toast.makeText(context, "Produto atualizado!", Toast.LENGTH_SHORT).show()
+                            } else { // MODO DE ADIÇÃO
+                                val novoProduto = Produto(
+                                    nome = nome, descricao = descricao, preco = preco,
+                                    lojaId = lojaId!!, lojaNome = lojaNome, // Assumindo que lojaNome seria buscado
+                                    imagemUrl = imagemUrlFinal, videoUrl = videoUrlFinal
+                                )
+                                ProdutoRepository.salvar(novoProduto)
+                                Toast.makeText(context, "Produto cadastrado!", Toast.LENGTH_SHORT).show()
+                            }
+                            onProdutoSalvo()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                        } finally {
+                            isLoading = false
                         }
                     }
-                    onProdutoSalvo()
-                } else {
-                    Toast.makeText(context, "Preencha todos os campos obrigatórios.", Toast.LENGTH_SHORT).show()
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
         ) {
-            Text(if (isEditMode) "Salvar Alterações" else "Salvar Produto")
+            if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            else Text(if (isEditMode) "Salvar Alterações" else "Salvar Produto")
         }
     }
 }

@@ -11,19 +11,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.ondetem.data.Loja
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.ondetem.data.LojaRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun CadastroLojaScreen(
-    vendedorEmail: String, // Este parâmetro agora contém o ID do vendedor
+    vendedorId: String,
     onLojaCadastrada: () -> Unit
 ) {
-    val vendedorId = vendedorEmail // Renomeando para clareza
     var nomeLoja by remember { mutableStateOf("") }
     var endereco by remember { mutableStateOf("") }
     var telefone by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope() // CoroutineScope para chamar funções suspend
 
     Column(
         modifier = Modifier
@@ -47,25 +48,24 @@ fun CadastroLojaScreen(
             onClick = {
                 if (nomeLoja.isNotBlank() && endereco.isNotBlank() && telefone.isNotBlank()) {
                     isLoading = true
-                    // Agora a criação do objeto Loja corresponde ao modelo de dados atualizado
                     val novaLoja = Loja(
                         nome = nomeLoja,
                         endereco = endereco,
                         telefone = telefone,
-                        donoId = vendedorId // Este campo agora existe
+                        donoId = vendedorId
                     )
 
-                    val db = FirebaseFirestore.getInstance()
-                    db.collection("lojas").add(novaLoja)
-                        .addOnSuccessListener {
-                            isLoading = false
+                    scope.launch {
+                        try {
+                            LojaRepository.salvar(novaLoja)
                             Toast.makeText(context, "Loja cadastrada com sucesso!", Toast.LENGTH_SHORT).show()
                             onLojaCadastrada()
-                        }
-                        .addOnFailureListener { e ->
-                            isLoading = false
+                        } catch (e: Exception) {
                             Toast.makeText(context, "Erro ao cadastrar loja: ${e.message}", Toast.LENGTH_LONG).show()
+                        } finally {
+                            isLoading = false
                         }
+                    }
                 } else {
                     Toast.makeText(context, "Por favor, preencha todos os campos.", Toast.LENGTH_SHORT).show()
                 }

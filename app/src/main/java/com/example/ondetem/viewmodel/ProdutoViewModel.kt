@@ -6,7 +6,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ondetem.data.Produto
 import com.example.ondetem.data.ProdutoRepository
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class ProdutoViewModel(application: Application) : AndroidViewModel(application) {
@@ -14,7 +13,6 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
     var produtos by mutableStateOf<List<Produto>>(emptyList())
         private set
 
-    // MUDANÇA: Tornando a lista mestra acessível publicamente (apenas para leitura)
     var todosOsProdutos by mutableStateOf<List<Produto>>(emptyList())
         private set
 
@@ -30,26 +28,24 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
 
     fun carregarTodosOsProdutos() {
         viewModelScope.launch {
-            val context = getApplication<Application>().applicationContext
-            // Agora atualiza a nova variável de estado pública
-            todosOsProdutos = ProdutoRepository.listarTodos(context)
+            isLoading = true
+            todosOsProdutos = ProdutoRepository.listarTodos()
+            // Re-aplica a busca se já houver uma
+            buscar(busca)
+            isLoading = false
         }
     }
 
     fun buscar(texto: String) {
         busca = texto
-        viewModelScope.launch {
-            isLoading = true
-            delay(500)
-            produtos = if (texto.isNotBlank()) {
-                todosOsProdutos.filter {
-                    it.nome.contains(texto, ignoreCase = true) ||
-                            it.descricao.contains(texto, ignoreCase = true)
-                }
-            } else {
-                emptyList()
+        // Não precisa de coroutine aqui, a filtragem é síncrona
+        produtos = if (texto.isNotBlank()) {
+            todosOsProdutos.filter {
+                it.nome.contains(texto, ignoreCase = true) ||
+                        it.descricao.contains(texto, ignoreCase = true)
             }
-            isLoading = false
+        } else {
+            emptyList()
         }
     }
 }
