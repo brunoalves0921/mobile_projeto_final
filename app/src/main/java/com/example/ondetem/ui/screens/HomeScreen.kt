@@ -11,14 +11,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.example.ondetem.viewmodel.ProdutoViewModel
 import com.example.ondetem.ui.components.ProdutoCard
+import com.example.ondetem.viewmodel.ProdutoViewModel
 
 @Composable
 fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
+
+    // NOVO: LaunchedEffect para recarregar os produtos sempre que a tela for exibida.
+    // A chave `true` garante que ele rode apenas uma vez quando a tela entra na composição.
+    LaunchedEffect(true) {
+        viewModel.carregarTodosOsProdutos()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -39,7 +45,6 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Lógica para exibir o indicador ou a lista
         if (viewModel.isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -48,13 +53,14 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (Int) -> Unit) {
                 CircularProgressIndicator()
             }
         } else {
-            if (viewModel.busca.isBlank()) {
+            // Alterado para mostrar uma mensagem diferente se a busca não retornar nada
+            if (viewModel.produtos.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Digite algo para buscar produtos.",
+                        text = if (viewModel.busca.isNotBlank()) "Nenhum produto encontrado." else "Digite algo para buscar.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                     )

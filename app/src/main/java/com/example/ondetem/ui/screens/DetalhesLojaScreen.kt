@@ -1,22 +1,14 @@
 package com.example.ondetem.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -27,11 +19,38 @@ import com.example.ondetem.ui.components.ProdutoCard
 @Composable
 fun DetalhesLojaScreen(
     nomeLoja: String,
-    onAddProduto: () -> Unit
+    onAddProduto: () -> Unit,
+    onEditProduto: (Int) -> Unit // Nova ação para editar
 ) {
     val context = LocalContext.current
-    val loja = LojaRepository.getLojasPorVendedor(context, "").firstOrNull { it.nome == nomeLoja }
-    val produtosDaLoja = ProdutoRepository.getProdutosPorLoja(context, nomeLoja)
+    val loja = LojaRepository.listarTodas(context).firstOrNull { it.nome == nomeLoja }
+
+    // --- LÓGICA ATUALIZADA PARA PERMITIR ATUALIZAÇÃO DA LISTA ---
+    var produtosDaLoja by remember { mutableStateOf(ProdutoRepository.getProdutosPorLoja(context, nomeLoja)) }
+    var showDialog by remember { mutableStateOf<Int?>(null) } // Guarda o ID do produto a ser deletado
+
+    // Diálogo de confirmação para deletar
+    if (showDialog != null) {
+        AlertDialog(
+            onDismissRequest = { showDialog = null },
+            title = { Text("Confirmar Exclusão") },
+            text = { Text("Você tem certeza que deseja deletar este produto? Esta ação não pode ser desfeita.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        ProdutoRepository.deletar(context, showDialog!!)
+                        // Atualiza a lista na tela após deletar
+                        produtosDaLoja = ProdutoRepository.getProdutosPorLoja(context, nomeLoja)
+                        showDialog = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Deletar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = null }) { Text("Cancelar") }
+            }
+        )
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -41,10 +60,7 @@ fun DetalhesLojaScreen(
         }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
+            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)
         ) {
             if (loja != null) {
                 Text(loja.nome, style = MaterialTheme.typography.headlineMedium)
@@ -59,11 +75,28 @@ fun DetalhesLojaScreen(
                 Text("Nenhum produto cadastrado nesta loja ainda.")
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     items(produtosDaLoja) { produto ->
-                        ProdutoCard(produto = produto, onClick = { /* Não faz nada por enquanto */ })
+                        Column {
+                            ProdutoCard(produto = produto, onClick = { /* Não faz nada */ })
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(onClick = { onEditProduto(produto.id) }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Editar")
+                                }
+                                TextButton(onClick = { showDialog = produto.id }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Deletar", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Deletar", color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
                     }
                 }
             }

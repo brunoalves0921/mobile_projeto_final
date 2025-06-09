@@ -20,6 +20,11 @@ object LojaRepository {
         return Gson().fromJson(json, type) ?: emptyList()
     }
 
+    // NOVA FUNÇÃO ADICIONADA
+    fun listarTodas(context: Context): List<Loja> {
+        return getLojas(context)
+    }
+
     fun salvar(context: Context, loja: Loja) {
         val lojas = getLojas(context).toMutableList()
         lojas.add(loja)

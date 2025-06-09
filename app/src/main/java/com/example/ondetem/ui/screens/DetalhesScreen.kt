@@ -27,8 +27,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.ondetem.data.Produto
-import com.example.ondetem.data.produtosMockados
 import com.example.ondetem.notifications.NotificationReceiver
+import com.example.ondetem.viewmodel.ProdutoViewModel // Importar o ViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -38,12 +38,14 @@ import java.util.*
 @Composable
 fun DetalhesScreen(
     produtoId: Int,
+    viewModel: ProdutoViewModel, // ADICIONADO: Receber o ViewModel
     favoriteProducts: List<Produto>,
     onToggleFavorite: (Produto) -> Unit,
     areNotificationsEnabled: Boolean
 ) {
     val context = LocalContext.current
-    val produto = produtosMockados.firstOrNull { it.id == produtoId } ?: return
+    // CORRIGIDO: Busca o produto na lista completa do ViewModel, não mais na lista mockada
+    val produto = viewModel.produtos.firstOrNull { it.id == produtoId } ?: return
 
     val notificacaoPermissionState = rememberPermissionState(
         permission = Manifest.permission.POST_NOTIFICATIONS
@@ -61,8 +63,14 @@ fun DetalhesScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Text("Preço: ${produto.preco}")
             Text("Loja: ${produto.loja}")
-            Text("Endereço: ${produto.endereco}")
-            Text("Telefone: ${produto.telefone}")
+            // Apenas mostra endereço e telefone se eles existirem no produto cadastrado
+            if (produto.endereco.isNotBlank()) {
+                Text("Endereço: ${produto.endereco}")
+            }
+            if (produto.telefone.isNotBlank()) {
+                Text("Telefone: ${produto.telefone}")
+            }
+
 
             Spacer(modifier = Modifier.height(16.dp))
 

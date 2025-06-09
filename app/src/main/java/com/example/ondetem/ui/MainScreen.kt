@@ -8,9 +8,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.components.TopBar
 import com.example.ondetem.ui.screens.*
@@ -40,10 +42,7 @@ fun MainScreen(
                 currentRoute = currentRoute.value,
                 canNavigateBack = navController.previousBackStackEntry != null && currentRoute.value != "selecionar_perfil",
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateTo = {
-                    navController.navigate(it)
-                    currentRoute.value = it
-                }
+                onNavigateTo = { navController.navigate(it); currentRoute.value = it }
             )
         },
         bottomBar = {
@@ -51,22 +50,10 @@ fun MainScreen(
                 NavigationBar {
                     bottomItems.forEach { screen ->
                         NavigationBarItem(
-                            icon = {
-                                Icon(
-                                    imageVector = when (screen) {
-                                        "home" -> Icons.Default.Home
-                                        "favoritos" -> Icons.Default.Favorite
-                                        else -> Icons.Default.Home
-                                    },
-                                    contentDescription = null
-                                )
-                            },
+                            icon = { Icon(imageVector = when (screen) {"home" -> Icons.Default.Home else -> Icons.Default.Favorite}, contentDescription = null) },
                             label = { Text(screen.replaceFirstChar { it.uppercase() }) },
                             selected = currentRoute.value == screen,
-                            onClick = {
-                                navController.navigate(screen)
-                                currentRoute.value = screen
-                            }
+                            onClick = { navController.navigate(screen); currentRoute.value = screen }
                         )
                     }
                 }
@@ -74,141 +61,22 @@ fun MainScreen(
         }
     ) { padding ->
         NavHost(
-            navController = navController,
-            startDestination = "selecionar_perfil",
-            modifier = Modifier.padding(padding),
-            enterTransition = { fadeIn(animationSpec = tween(300)) },
-            exitTransition = { fadeOut(animationSpec = tween(300)) },
-            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-            popExitTransition = { fadeOut(animationSpec = tween(300)) }
+            navController = navController, startDestination = "selecionar_perfil", modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn(animationSpec = tween(300)) }, exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) }, popExitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
-            composable("home") {
-                currentRoute.value = "home"
-                HomeScreen(viewModel) { id ->
-                    navController.navigate("detalhes/$id")
-                    currentRoute.value = "detalhes"
-                }
-            }
-            composable("favoritos") {
-                currentRoute.value = "favoritos"
-                FavoritosScreen(favoriteProducts = favoriteProducts) { id ->
-                    navController.navigate("detalhes/$id")
-                    currentRoute.value = "detalhes"
-                }
-            }
-            composable("config") {
-                currentRoute.value = "config"
-                ConfiguracoesScreen(
-                    viewModel = viewModel,
-                    darkMode = darkMode,
-                    onToggleDarkMode = onToggleDarkMode,
-                    areNotificationsEnabled = areNotificationsEnabled,
-                    onToggleNotifications = onToggleNotifications
-                )
-            }
-            composable("ajuda") {
-                currentRoute.value = "ajuda"
-                AjudaScreen()
-            }
-            composable("detalhes/{id}") { backStackEntry ->
-                currentRoute.value = "detalhes"
-                val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
-                DetalhesScreen(
-                    produtoId = id,
-                    favoriteProducts = favoriteProducts,
-                    onToggleFavorite = onToggleFavorite,
-                    areNotificationsEnabled = areNotificationsEnabled
-                )
-            }
-            composable("selecionar_perfil") {
-                currentRoute.value = "selecionar_perfil"
-                RoleSelectionScreen(
-                    onSelecionarCliente = {
-                        navController.navigate("home") {
-                            popUpTo("selecionar_perfil") { inclusive = true }
-                        }
-                        currentRoute.value = "home"
-                    },
-                    onSelecionarVendedor = {
-                        navController.navigate("login")
-                        currentRoute.value = "login"
-                    }
-                )
-            }
-            composable("login") {
-                currentRoute.value = "login"
-                LoginScreen(
-                    onLoginSucesso = { email ->
-                        navController.navigate("perfil_vendedor/$email") {
-                            popUpTo("selecionar_perfil") { inclusive = true }
-                        }
-                        currentRoute.value = "perfil_vendedor"
-                    },
-                    onIrParaCadastro = {
-                        navController.navigate("cadastro")
-                        currentRoute.value = "cadastro"
-                    }
-                )
-            }
-            composable("cadastro") {
-                currentRoute.value = "cadastro"
-                CadastroScreen(
-                    onCadastroSucesso = {
-                        navController.navigate("login") { popUpTo("cadastro") { inclusive = true } }
-                        currentRoute.value = "login"
-                    },
-                    onVoltarParaLogin = {
-                        navController.popBackStack()
-                        currentRoute.value = "login"
-                    }
-                )
-            }
+            composable("home") { currentRoute.value = "home"; HomeScreen(viewModel) { id -> navController.navigate("detalhes/$id"); currentRoute.value = "detalhes" } }
+            composable("favoritos") { currentRoute.value = "favoritos"; FavoritosScreen(favoriteProducts) { id -> navController.navigate("detalhes/$id"); currentRoute.value = "detalhes" } }
+            composable("config") { currentRoute.value = "config"; ConfiguracoesScreen(viewModel, darkMode, onToggleDarkMode, areNotificationsEnabled, onToggleNotifications) }
+            composable("ajuda") { currentRoute.value = "ajuda"; AjudaScreen() }
+            composable("detalhes/{id}") { backStackEntry -> currentRoute.value = "detalhes"; val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable; DetalhesScreen(id, viewModel, favoriteProducts, onToggleFavorite, areNotificationsEnabled) }
+            composable("selecionar_perfil") { currentRoute.value = "selecionar_perfil"; RoleSelectionScreen({ navController.navigate("home") { popUpTo("selecionar_perfil") { inclusive = true } }; currentRoute.value = "home" }, { navController.navigate("login"); currentRoute.value = "login" }) }
+            composable("login") { currentRoute.value = "login"; LoginScreen({ email -> navController.navigate("perfil_vendedor/$email") { popUpTo("selecionar_perfil") { inclusive = true } }; currentRoute.value = "perfil_vendedor" }, { navController.navigate("cadastro"); currentRoute.value = "cadastro" }) }
+            composable("cadastro") { currentRoute.value = "cadastro"; CadastroScreen({ navController.navigate("login") { popUpTo("cadastro") { inclusive = true } }; currentRoute.value = "login" }, { navController.popBackStack(); currentRoute.value = "login" }) }
+            composable("perfil_vendedor/{email}") { backStackEntry -> currentRoute.value = "perfil_vendedor"; val email = backStackEntry.arguments?.getString("email") ?: ""; PerfilVendedorScreen(email, { navController.navigate("cadastro_loja/$email"); currentRoute.value = "cadastro_loja" }, { navController.navigate("selecionar_perfil") { popUpTo(navController.graph.startDestinationId) { inclusive = true } }; navController.navigate("selecionar_perfil"); currentRoute.value = "selecionar_perfil" }, { nomeLoja -> val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString()); navController.navigate("detalhes_loja/$encodedNomeLoja"); currentRoute.value = "detalhes_loja" }) }
+            composable("cadastro_loja/{vendedorEmail}") { backStackEntry -> currentRoute.value = "cadastro_loja"; val email = backStackEntry.arguments?.getString("vendedorEmail") ?: ""; CadastroLojaScreen(email) { navController.popBackStack(); currentRoute.value = "perfil_vendedor" } }
 
-            // NOVA ROTA: Perfil do Vendedor
-            composable("perfil_vendedor/{email}") { backStackEntry ->
-                currentRoute.value = "perfil_vendedor"
-                val email = backStackEntry.arguments?.getString("email") ?: ""
-                PerfilVendedorScreen(
-                    vendedorEmail = email,
-                    onCadastrarLoja = {
-                        navController.navigate("cadastro_loja/$email")
-                        currentRoute.value = "cadastro_loja"
-                    },
-                    onLogout = {
-                        navController.navigate("selecionar_perfil") {
-                            // Limpa a pilha de navegação até o perfil, removendo-o
-                            popUpTo(navController.graph.startDestinationId) {
-                                inclusive = true
-                            }
-                        }
-                        // Força a navegação para o início
-                        navController.navigate("selecionar_perfil")
-                        currentRoute.value = "selecionar_perfil"
-                    },
-                    // Ação ao clicar na loja
-                    onLojaClick = { nomeLoja ->
-                        // Codifica o nome da loja para passar como argumento de URL
-                        val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString())
-                        navController.navigate("detalhes_loja/$encodedNomeLoja")
-                        currentRoute.value = "detalhes_loja"
-                    }
-                )
-            }
-
-            // NOVA ROTA: Cadastro de Loja
-            composable("cadastro_loja/{vendedorEmail}") { backStackEntry ->
-                currentRoute.value = "cadastro_loja"
-                val email = backStackEntry.arguments?.getString("vendedorEmail") ?: ""
-                CadastroLojaScreen(
-                    vendedorEmail = email,
-                    onLojaCadastrada = {
-                        navController.popBackStack()
-                        currentRoute.value = "perfil_vendedor"
-                    }
-                )
-            }
-
-            // NOVA ROTA: Detalhes da Loja
+            // ROTA ATUALIZADA
             composable("detalhes_loja/{nomeLoja}") { backStackEntry ->
                 currentRoute.value = "detalhes_loja"
                 val nomeLoja = backStackEntry.arguments?.getString("nomeLoja") ?: ""
@@ -218,20 +86,36 @@ fun MainScreen(
                         val encodedNomeLoja = URLEncoder.encode(nomeLoja, StandardCharsets.UTF_8.toString())
                         navController.navigate("cadastro_produto/$encodedNomeLoja")
                         currentRoute.value = "cadastro_produto"
+                    },
+                    onEditProduto = { produtoId -> // Navega para a nova tela de edição
+                        navController.navigate("editar_produto/$produtoId")
+                        currentRoute.value = "editar_produto"
                     }
                 )
             }
 
-            // NOVA ROTA: Cadastro de Produto
+            // ROTA ATUALIZADA
             composable("cadastro_produto/{nomeLoja}") { backStackEntry ->
                 currentRoute.value = "cadastro_produto"
-                val nomeLoja = backStackEntry.arguments?.getString("nomeLoja") ?: ""
+                val nomeLoja = backStackEntry.arguments?.getString("nomeLoja")
                 CadastroProdutoScreen(
                     nomeLoja = nomeLoja,
-                    onProdutoCadastrado = {
-                        navController.popBackStack()
-                        currentRoute.value = "detalhes_loja"
-                    }
+                    produtoId = null, // Modo de adição
+                    onProdutoSalvo = { navController.popBackStack(); currentRoute.value = "detalhes_loja" }
+                )
+            }
+
+            // NOVA ROTA DE EDIÇÃO
+            composable(
+                "editar_produto/{produtoId}",
+                arguments = listOf(navArgument("produtoId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                currentRoute.value = "editar_produto"
+                val produtoId = backStackEntry.arguments?.getInt("produtoId")
+                CadastroProdutoScreen(
+                    nomeLoja = null, // Não é necessário no modo de edição
+                    produtoId = produtoId, // Passa o ID para o modo de edição
+                    onProdutoSalvo = { navController.popBackStack(); currentRoute.value = "detalhes_loja" }
                 )
             }
         }

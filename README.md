@@ -2,7 +2,7 @@
 
 ## Universidade Federal do Ceará – Campus Quixadá
 
-**Disciplina:** QXD0276 - Desenvolvimento de Software para Dispositivos Móveis
+**Disciplina:** QXD0256 - Desenvolvimento de Software para Dispositivos Móveis
 
 **Professor:** Francisco Victor da Silva Pinheiro
 
@@ -12,56 +12,58 @@
 
 ## 1. Integrantes
 
-| Matrícula | Nome Completo | E-mail |
-|-----------|----------------|--------|
-| 509718 | JORGE BRUNO COSTA ALVES | jorge.bruno0921@alu.ufc.br |
+| Matrícula | Nome Completo             | E-mail                    |
+| :-------- | :------------------------ | :------------------------ |
+| 509718    | JORGE BRUNO COSTA ALVES   | jorge.bruno0921@alu.ufc.br |
 
 ---
 
 ## 2. Resumo da Entrega
 
-Este projeto representa a terceira e mais avançada etapa do trabalho final da disciplina. A versão atual do *Onde Tem?* evoluiu de uma aplicação simples para uma solução mais robusta e interativa, construída com **Jetpack Compose** e **Kotlin**.
+Este projeto representa a versão final e consolidada do aplicativo *Onde Tem?*, uma plataforma que conecta consumidores a comerciantes locais. Construído inteiramente com **Jetpack Compose** e **Kotlin**, o aplicativo evoluiu para uma solução robusta que gerencia dois fluxos de usuário distintos: Cliente e Vendedor.
 
-Nesta fase, o foco foi a implementação de funcionalidades avançadas exigidas para a conclusão do projeto, como:
-- **Persistência de dados e preferências** com Jetpack DataStore.
-- **Agendamento de notificações** utilizando Services e BroadcastReceivers.
-- **Melhoria na experiência do usuário** com indicadores de progresso e animações sutis.
-- **Criação de um fluxo de autenticação** para o perfil de "Vendedor", com telas de login e cadastro.
-
-O aplicativo continua com o propósito de conectar consumidores a comerciantes locais, facilitando a busca por produtos em lojas físicas da região.
+Nesta fase final, o projeto implementa um ciclo completo de gerenciamento de dados pelo vendedor — desde a autenticação e cadastro de lojas até a adição, edição e exclusão de produtos com mídias persistentes. A aplicação agora utiliza uma arquitetura MVVM refinada, com o `ViewModel` atuando como uma fonte de dados única para a UI e os repositórios gerenciando a persistência de dados em arquivos JSON locais. Foram implementadas funcionalidades avançadas como `Jetpack DataStore` para preferências do usuário, `BroadcastReceiver` para notificações e uma interface de usuário interativa com animações e feedback visual, resultando em um aplicativo mais robusto e acessível.
 
 ---
 
 ## 3. Repositório de Código e Vídeo
 
-- 🎥 **[Vídeo de Apresentação](https://www.youtube.com/watch?v=8Fct9mTydCk):** (Seu link aqui)
-- 📦 **[Download APK](https://github.com/brunoalves0921/mobile_projeto_final/tree/main/releases/download/v1.0.0/ondetem.apk):** (Seu link aqui)
+- 🎥 **[Vídeo de Apresentação](http://SEU_LINK_AQUI):** (Link para o vídeo de demonstração de 5 minutos)
+- 📦 **[Download APK](http://SEU_LINK_AQUI):** (Link para o arquivo `.apk` da release no GitHub)
 
 ---
 
 ## 4. Funcionalidades Implementadas
 
 | Funcionalidade | Status | Responsável |
-|---|---|---|
-| **Interface e Navegação** | | |
+| :--- | :--- | :--- |
+| **Interface e Navegação (Cliente)** | | |
 | Tela inicial com busca de produtos | ✅ Concluído | Jorge Bruno |
-| Tela de detalhes com informações e vídeo | ✅ Concluído | Jorge Bruno |
-| Navegação com TopAppBar, BottomBar e NavController | ✅ Concluído | Jorge Bruno |
-| Menu de opções (Configurações, Ajuda) | ✅ Concluído | Jorge Bruno |
-| **Persistência de Dados (Jetpack DataStore)** | | |
-| Salvar/Carregar preferência de Modo Escuro | ✅ Concluído | Jorge Bruno |
-| Salvar/Carregar lista de produtos favoritos | ✅ Concluído | Jorge Bruno |
-| Salvar/Carregar preferência de ativação de notificações | ✅ Concluído | Jorge Bruno |
+| Tela de detalhes com informações, fotos e vídeo | ✅ Concluído | Jorge Bruno |
+| Navegação com TopAppBar e BottomBar | ✅ Concluído | Jorge Bruno |
+| Tela de Favoritos | ✅ Concluído | Jorge Bruno |
+| **Fluxo de Vendedor (Autenticação e Gerenciamento)** | | |
+| Tela de seleção de perfil (Cliente/Vendedor) | ✅ Concluído | Jorge Bruno |
+| Telas de Login e Cadastro para Vendedor | ✅ Concluído | Jorge Bruno |
+| Persistência de dados do vendedor em arquivo JSON | ✅ Concluído | Jorge Bruno |
+| Tela de perfil do vendedor com listagem de lojas | ✅ Concluído | Jorge Bruno |
+| Cadastro de novas lojas | ✅ Concluído | Jorge Bruno |
+| Tela de detalhes da loja com listagem de produtos | ✅ Concluído | Jorge Bruno |
+| **Gerenciamento de Produtos (CRUD Completo)** | | |
+| Cadastro de novos produtos vinculado a uma loja | ✅ Concluído | Jorge Bruno |
+| Anexar foto/vídeo da galeria no cadastro do produto | ✅ Concluído | Jorge Bruno |
+| Persistência de mídias (cópia para armazenamento interno) | ✅ Concluído | Jorge Bruno |
+| Edição de informações e mídias de produtos existentes | ✅ Concluído | Jorge Bruno |
+| Exclusão de produtos com diálogo de confirmação | ✅ Concluído | Jorge Bruno |
 | **Funcionalidades Avançadas** | | |
-| Agendamento de notificações de lembrete para produtos | ✅ Concluído | Jorge Bruno |
+| Persistência de preferências com Jetpack DataStore | ✅ Concluído | Jorge Bruno |
+| ᐅ Salvar/Carregar preferência de Modo Escuro | ✅ Concluído | Jorge Bruno |
+| ᐅ Salvar/Carregar lista de produtos favoritos | ✅ Concluído | Jorge Bruno |
+| ᐅ Salvar/Carregar preferência de ativação de notificações | ✅ Concluído | Jorge Bruno |
+| Agendamento de notificações de lembrete com BroadcastReceiver | ✅ Concluído | Jorge Bruno |
 | Indicador de progresso (`CircularProgressIndicator`) na busca | ✅ Concluído | Jorge Bruno |
 | Animações de transição de tela (fade-in/out) | ✅ Concluído | Jorge Bruno |
-| Animações em componentes (botão de favoritar) | ✅ Concluído | Jorge Bruno |
-| **Autenticação de Vendedor** | | |
-| Tela de seleção de perfil (Cliente/Vendedor) | ✅ Concluído | Jorge Bruno |
-| Tela de Login para Vendedor | ✅ Concluído | Jorge Bruno |
-| Tela de Cadastro para Vendedor | ✅ Concluído | Jorge Bruno |
-| Persistência de dados do vendedor em arquivo JSON | ✅ Concluído | Jorge Bruno |
+| Animação no botão de favoritar | ✅ Concluído | Jorge Bruno |
 | **Ajuda e Configurações** | | |
 | Tela de Configurações com controles funcionais | ✅ Concluído | Jorge Bruno |
 | Tela de Ajuda com FAQ e formulário de contato | ✅ Concluído | Jorge Bruno |
@@ -70,63 +72,81 @@ O aplicativo continua com o propósito de conectar consumidores a comerciantes l
 
 ## 5. Capturas de Tela
 
-- 🏠 Tela Inicial
-  ![Home Screen](prints/telainicial.png)
-- 🔍 Busca com Indicador de Progresso
-  *(Novo Print: Mostre a tela de busca com o indicador de progresso circular aparecendo)*
-- 📄 Tela de Detalhes com vídeo
-  ![Home Screen](prints/detalhes.png)
+- 🏠 Tela Inicial (Cliente, antes da busca)
+- 🔍 Tela de Busca (Cliente, com resultados)
+- 📄 Tela de Detalhes do Produto (com foto e/ou vídeo)
 - ❤️ Tela de Favoritos (com itens salvos)
-  ![Home Screen](prints/favoritos.png)
-- ⚙️ Tela de Configurações funcional
-  ![Home Screen](prints/config.png)
+- ⚙️ Tela de Configurações
 - 🌙 Modo Escuro ativo
-  ![Home Screen](prints/escuro.png)
-- 🔔 Notificação de Lembrete
-  *(Novo Print: Mostre a notificação gerada pelo app na bandeja do sistema)*
-- 👤 Tela de Seleção de Perfil
-  *(Novo Print: Mostre a tela inicial onde o usuário escolhe entre "Sou Cliente" e "Sou Vendedor")*
-- 🔑 Tela de Login do Vendedor
-  *(Novo Print: Mostre a tela de login com os campos de e-mail e senha)*
-- ✍️ Tela de Cadastro do Vendedor
-  *(Novo Print: Mostre a tela de cadastro do vendedor)*
+- 🔔 Notificação de Lembrete na bandeja do sistema
+- 👤 Tela de Seleção de Perfil (Cliente/Vendedor)
+- 🔑 Tela de Login e Cadastro do Vendedor
+- 🏪 Tela de Perfil do Vendedor (com a lista de suas lojas)
+- 📝 Tela de Detalhes da Loja (com a lista de seus produtos)
+- ✨ Tela de Adicionar/Editar Produto (com campos preenchidos)
 
 ---
 
 ## 6. Arquitetura e Organização
 
-O projeto segue o padrão **MVVM (Model-View-ViewModel)** e foi estruturado para separar responsabilidades, com as seguintes novidades:
-
+O projeto segue o padrão de arquitetura **MVVM (Model-View-ViewModel)**, estruturado para uma clara separação de responsabilidades.
 ```
-com.example.ondetem/
+com.example.ondetem
 │
 ├── data/
-│ ├── SettingsDataStore.kt  // Novo: Gerencia as preferências com Jetpack DataStore
-│ ├── VendedorRepository.kt // Novo: Gerencia os dados dos vendedores (leitura/escrita em JSON)
-│ ├── Produto.kt
-│ ├── Vendedor.kt
-│ └── MockData.kt
+│   ├── Loja.kt
+│   ├── LojaRepository.kt
+│   ├── Produto.kt
+│   ├── ProdutoRepository.kt
+│   ├── SettingsDataStore.kt
+│   ├── Vendedor.kt
+│   └── VendedorRepository.kt
 │
 ├── notifications/
-│ └── NotificationReceiver.kt // Novo: BroadcastReceiver para disparar as notificações agendadas
-│
-├── viewmodel/
-│ └── ProdutoViewModel.kt   // Lógica de busca e estado da tela principal
+│   └── NotificationReceiver.kt
 │
 ├── ui/
-│ ├── components/           // Componentes reutilizáveis (ProdutoCard, TopBar)
-│ ├── screens/              // Telas do app (Home, Detalhes, Login, Cadastro, etc.)
-│ └── MainScreen.kt         // Gerencia a navegação principal com NavHost
+│   ├── components/
+│   │   ├── ProdutoCard.kt
+│   │   ├── ProdutoItemRow.kt
+│   │   └── TopBar.kt
+│   │
+│   ├── screens/
+│   │   ├── AjudaScreen.kt
+│   │   ├── CadastroLojaScreen.kt
+│   │   ├── CadastroProdutoScreen.kt
+│   │   ├── CadastroScreen.kt
+│   │   ├── ConfiguracoesScreen.kt
+│   │   ├── DetalhesLojaScreen.kt
+│   │   ├── DetalhesScreen.kt
+│   │   ├── FavoritosScreen.kt
+│   │   ├── HomeScreen.kt
+│   │   ├── LoginScreen.kt
+│   │   ├── PerfilVendedorScreen.kt
+│   │   ├── RoleSelectionScreen.kt
+│   │   └── VendedorHomeScreen.kt
+│   │
+│   ├── theme/
+│   │   └── (Arquivos de tema: Color.kt, Theme.kt, etc.)
+│   │
+│   └── MainScreen.kt
 │
-├── ui/theme/
-│ └── Theme.kt              // Tema dinâmico claro/escuro com Material 3
+├── viewmodel/
+│   └── ProdutoViewModel.kt
 │
-└── MainActivity.kt         // Ponto de entrada, observa e provê o estado global (DataStore)
+└── MainActivity.kt
 ```
 
-- **Gerenciamento de Estado:** O estado global (modo escuro, favoritos, notificações) é gerenciado na `MainActivity` e lido a partir do **Jetpack DataStore**. Esse estado é passado via parâmetros para os Composables, seguindo um fluxo de dados unidirecional.
-- **Notificações:** O agendamento é feito com `AlarmManager` na tela de detalhes, que ativa um `BroadcastReceiver` para criar e exibir a notificação no momento certo.
+- **Gerenciamento de Estado:** O estado global (modo escuro, favoritos, etc.) é gerenciado na `MainActivity` e lido a partir do **Jetpack DataStore**. O `ProdutoViewModel`, como um `AndroidViewModel`, centraliza a lógica de negócios e o estado da UI para o fluxo do cliente, atuando como uma fonte única de verdade e garantindo que os dados estejam sempre atualizados na tela.
 
----
+- **Persistência de Dados:**
+  - **Preferências do Usuário:** Utiliza-se `Jetpack DataStore` para um armazenamento assíncrono e eficiente.
+  - **Dados do Vendedor:** As informações de vendedores, lojas e produtos são serializadas e persistidas em arquivos JSON no armazenamento interno do aplicativo, gerenciadas pelas classes `Repository`.
+
+- **Persistência de Mídia:** Para contornar as restrições de acesso do Android (Scoped Storage), os arquivos de imagem e vídeo selecionados da galeria são copiados para o armazenamento interno do aplicativo. O caminho absoluto e permanente desse arquivo é salvo, garantindo que a mídia sempre possa ser acessada e exibida.
+
+- **Notificações:** O agendamento é feito na tela de detalhes do produto usando `AlarmManager`, que por sua vez ativa um `BroadcastReceiver` no tempo configurado para criar e exibir a notificação para o usuário.
+
+
 
 
