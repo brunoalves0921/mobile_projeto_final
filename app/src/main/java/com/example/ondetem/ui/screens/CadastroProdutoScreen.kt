@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil.compose.AsyncImage
@@ -22,6 +24,7 @@ import com.example.ondetem.data.Loja
 import com.example.ondetem.data.LojaRepository
 import com.example.ondetem.data.Produto
 import com.example.ondetem.data.ProdutoRepository
+import com.example.ondetem.ui.utils.CurrencyVisualTransformation
 import kotlinx.coroutines.launch
 
 @Composable
@@ -34,13 +37,17 @@ fun CadastroProdutoScreen(
     val scope = rememberCoroutineScope()
     val isEditMode = produtoId != null
 
+    // Estados dos campos
     var produtoCarregado by remember { mutableStateOf<Produto?>(null) }
     var lojaCarregada by remember { mutableStateOf<Loja?>(null) }
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
+    // O estado 'preco' agora guarda apenas os dígitos como String
     var preco by remember { mutableStateOf("") }
     var imagemUri by remember { mutableStateOf<Uri?>(null) }
     var videoUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Estados para controle de UI
     var isSaving by remember { mutableStateOf(false) }
     var uploadProgress by remember { mutableStateOf(0.0) }
     var uploadMessage by remember { mutableStateOf("") }
@@ -50,12 +57,13 @@ fun CadastroProdutoScreen(
         if (isEditMode && produtoId != null) {
             produtoCarregado = ProdutoRepository.getProdutoPorId(produtoId)
             produtoCarregado?.let {
-                nome = it.nome; descricao = it.descricao; preco = it.preco
+                nome = it.nome
+                descricao = it.descricao
+                preco = it.precoEmCentavos.toString() // Converte os centavos para string
                 if (it.imagemUrl.isNotBlank()) imagemUri = it.imagemUrl.toUri()
                 if (it.videoUrl.isNotBlank()) videoUri = it.videoUrl.toUri()
             }
         } else if (lojaId != null) {
-            // Usa a função correta do LojaRepository para buscar os dados da loja
             lojaCarregada = LojaRepository.getLojaPorId(lojaId)
         }
         isSaving = false
@@ -74,15 +82,27 @@ fun CadastroProdutoScreen(
             }
         } else {
             Text(text = if (isEditMode) "Editar Produto" else "Adicionar Produto", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 24.dp))
-            OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do Produto") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(value = descricao, onValueChange = { descricao = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(value = preco, onValueChange = { preco = it }, label = { Text("Preço") }, modifier = Modifier.fillMaxWidth())
+
+            OutlinedTextField(
+                value = preco,
+                onValueChange = { novoValor ->
+                    // Permite apenas dígitos
+                    preco = novoValor.filter { it.isDigit() }
+                },
+                label = { Text("Preço") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                visualTransformation = CurrencyVisualTransformation() // Aplica a máscara
+            )
+
             Spacer(Modifier.height(16.dp))
             AnimatedVisibility(visible = imagemUri != null) {
                 Column {
-                    AsyncImage(model = imagemUri, contentDescription = "Imagem", modifier = Modifier.fillMaxWidth().height(200.dp), contentScale = ContentScale.Crop)
+                    AsyncImage(model = imagemUri, contentDescription = "Imagem do produto", modifier = Modifier.fillMaxWidth().height(200.dp), contentScale = ContentScale.Crop)
                     Spacer(Modifier.height(8.dp))
                 }
             }
@@ -91,40 +111,59 @@ fun CadastroProdutoScreen(
             OutlinedButton(onClick = { seletorDeVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)) }, modifier = Modifier.fillMaxWidth()) { Text("Selecionar Vídeo") }
             AnimatedVisibility(visible = videoUri != null) { Text("Vídeo selecionado!", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top=8.dp)) }
             Spacer(Modifier.height(24.dp))
+
             Button(
                 onClick = {
                     if (nome.isNotBlank() && preco.isNotBlank()) {
                         isSaving = true
                         scope.launch {
                             try {
+                                val precoEmCentavos = preco.toLongOrNull() ?: 0L
                                 if (isEditMode) {
+                                    // LÓGICA DE EDIÇÃO COMPLETA
                                     uploadMessage = "Atualizando produto..."
                                     var imgUrl = produtoCarregado?.imagemUrl ?: ""
-                                    if (imagemUri != null && imagemUri.toString() != produtoCarregado?.imagemUrl) imgUrl = ProdutoRepository.uploadMedia(imagemUri!!, "imagens_produtos") { progress -> uploadProgress = progress }
+                                    if (imagemUri != null && imagemUri.toString() != produtoCarregado?.imagemUrl) {
+                                        imgUrl = ProdutoRepository.uploadMedia(imagemUri!!, "imagens_produtos") { progress -> uploadProgress = progress }
+                                    }
                                     var vidUrl = produtoCarregado?.videoUrl ?: ""
-                                    if (videoUri != null && videoUri.toString() != produtoCarregado?.videoUrl) vidUrl = ProdutoRepository.uploadMedia(videoUri!!, "videos_produtos") { progress -> uploadProgress = progress }
-                                    val prodAtualizado = produtoCarregado!!.copy(nome=nome, descricao=descricao, preco=preco, imagemUrl=imgUrl, videoUrl=vidUrl)
+                                    if (videoUri != null && videoUri.toString() != produtoCarregado?.videoUrl) {
+                                        vidUrl = ProdutoRepository.uploadMedia(videoUri!!, "videos_produtos") { progress -> uploadProgress = progress }
+                                    }
+                                    val prodAtualizado = produtoCarregado!!.copy(
+                                        nome = nome,
+                                        descricao = descricao,
+                                        precoEmCentavos = precoEmCentavos,
+                                        imagemUrl = imgUrl,
+                                        videoUrl = vidUrl
+                                    )
                                     ProdutoRepository.atualizar(prodAtualizado)
                                     Toast.makeText(context, "Produto atualizado!", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    uploadMessage = "Criando registo do produto..."
+                                    // LÓGICA DE CRIAÇÃO OTIMIZADA COMPLETA
+                                    uploadMessage = "Criando registro do produto..."
                                     uploadProgress = 0.0
                                     val loja = lojaCarregada!!
-                                    var novoProduto = Produto(nome=nome, descricao=descricao, preco=preco, lojaId=loja.id, lojaNome=loja.nome, latitude = loja.latitude, longitude = loja.longitude)
+                                    var novoProduto = Produto(
+                                        nome = nome, descricao = descricao, precoEmCentavos = precoEmCentavos,
+                                        lojaId = loja.id, lojaNome = loja.nome,
+                                        latitude = loja.latitude, longitude = loja.longitude,
+                                        enderecoLoja = loja.endereco
+                                    )
                                     val novoId = ProdutoRepository.salvar(novoProduto)
                                     novoProduto = novoProduto.copy(id = novoId)
                                     if(imagemUri != null) {
-                                        uploadMessage = "A enviar imagem..."
+                                        uploadMessage = "Enviando imagem..."
                                         val url = ProdutoRepository.uploadMedia(imagemUri!!, "imagens_produtos") { progress -> uploadProgress = progress }
                                         novoProduto = novoProduto.copy(imagemUrl = url)
                                     }
                                     if(videoUri != null) {
-                                        uploadMessage = "A enviar vídeo (pode demorar)..."
+                                        uploadMessage = "Enviando vídeo (pode demorar)..."
                                         uploadProgress = 0.0
                                         val url = ProdutoRepository.uploadMedia(videoUri!!, "videos_produtos") { progress -> uploadProgress = progress }
                                         novoProduto = novoProduto.copy(videoUrl = url)
                                     }
-                                    uploadMessage = "A finalizar..."
+                                    uploadMessage = "Finalizando..."
                                     ProdutoRepository.atualizar(novoProduto)
                                     Toast.makeText(context, "Produto criado com sucesso!", Toast.LENGTH_SHORT).show()
                                 }

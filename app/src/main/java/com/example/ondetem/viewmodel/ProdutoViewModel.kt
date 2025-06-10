@@ -17,11 +17,10 @@ import kotlinx.coroutines.tasks.await
 
 class ProdutoViewModel(application: Application) : AndroidViewModel(application) {
 
-    // A lista de produtos exibida na UI. Começa vazia.
-    var produtos by mutableStateOf<List<Produto>>(emptyList())
-        private set
+    val produtos = mutableStateListOf<Produto>()
 
-    // A lista mestra com todos os produtos.
+    // AQUI ESTÁ A CORREÇÃO:
+    // Tornamos a lista pública para leitura, mas apenas o ViewModel pode alterá-la.
     var todosOsProdutos by mutableStateOf<List<Produto>>(emptyList())
         private set
 
@@ -44,9 +43,8 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
             isLoading = true
             statusMessage = "Buscando produtos..."
             todosOsProdutos = ProdutoRepository.listarTodos()
+            produtos.clear()
             isLoading = false
-            // Garante que a lista de exibição comece vazia
-            buscar(busca)
         }
     }
 
@@ -65,16 +63,20 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
                         longitude = locationResult.longitude
                     }
 
-                    val listaOrdenada = todosOsProdutos.sortedBy { produto ->
+                    val listaOrdenada = todosOsProdutos.map { produto ->
                         val lojaLocation = Location("Loja").apply {
                             latitude = produto.latitude
                             longitude = produto.longitude
                         }
-                        userLocation.distanceTo(lojaLocation)
-                    }
-                    // ATUALIZAÇÃO: Define a lista de exibição com os produtos ordenados
-                    produtos = listaOrdenada
+                        produto.distanciaEmMetros = userLocation.distanceTo(lojaLocation)
+                        produto
+                    }.sortedBy { it.distanciaEmMetros }
 
+                    todosOsProdutos = listaOrdenada.toList()
+
+                    buscar(busca)
+
+                    Toast.makeText(getApplication(), "Pronto! Agora pesquise para ver os produtos mais próximos.", Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(getApplication(), "Não foi possível obter a localização.", Toast.LENGTH_LONG).show()
                 }
@@ -88,16 +90,15 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
 
     fun buscar(texto: String) {
         busca = texto
-        // AQUI ESTÁ A CORREÇÃO:
-        // A lista de `produtos` só é preenchida se o usuário digitou algo.
-        produtos = if (texto.isNotBlank()) {
+        val resultados = if (texto.isNotBlank()) {
             todosOsProdutos.filter {
                 it.nome.contains(texto, ignoreCase = true) ||
                         it.descricao.contains(texto, ignoreCase = true)
             }
         } else {
-            // Se a busca estiver vazia, a lista de exibição também fica vazia.
             emptyList()
         }
+        produtos.clear()
+        produtos.addAll(resultados)
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +28,7 @@ import coil.compose.AsyncImage
 import com.example.ondetem.data.Produto
 import com.example.ondetem.notifications.NotificationReceiver
 import com.example.ondetem.ui.components.VideoPlayer
+import com.example.ondetem.ui.utils.formatPrice
 import com.example.ondetem.viewmodel.ProdutoViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -73,8 +75,29 @@ fun DetalhesScreen(
             Text(produto!!.nome, style = MaterialTheme.typography.headlineMedium)
             Text(produto!!.descricao, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Preço: ${produto!!.preco}")
-            Text("Loja: ${produto!!.lojaNome}")
+            Text("Preço: ${formatPrice(produto!!.precoEmCentavos)}")
+            Text("Vendido por: ${produto!!.lojaNome}", style = MaterialTheme.typography.titleSmall)
+
+            if (produto!!.enderecoLoja.isNotBlank()) {
+                Row(
+                    modifier = Modifier.padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.LocationOn,
+                        contentDescription = "Endereço da loja",
+                        modifier = Modifier.size(16.dp),
+                        tint = LocalContentColor.current.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = produto!!.enderecoLoja,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = LocalContentColor.current.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             if (produto!!.imagemUrl.isNotBlank()) {
@@ -116,9 +139,7 @@ fun DetalhesScreen(
                     putExtra("produto_nome", produto!!.nome)
                     putExtra("loja_nome", produto!!.lojaNome)
                 }
-
                 val requestCode = produto!!.id.hashCode()
-
                 val pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                 val triggerAtMillis = Calendar.getInstance().timeInMillis + 10_000
                 alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)

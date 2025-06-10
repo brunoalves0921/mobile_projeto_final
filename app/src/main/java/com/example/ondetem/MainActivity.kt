@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import com.example.ondetem.data.Produto
 import com.example.ondetem.data.SettingsDataStore
 import com.example.ondetem.ui.MainScreen
 import com.example.ondetem.ui.theme.OndeTEMTheme
@@ -30,10 +31,9 @@ class MainActivity : ComponentActivity() {
                 settingsDataStore.areNotificationsEnabled
             ) { isDarkMode, favoriteIds, notificationsEnabled ->
 
-                // CORREÇÃO: Filtra a partir da lista mestra `todosOsProdutos`,
-                // garantindo que a tela de favoritos sempre funcione.
+                // Esta linha agora funcionará, pois viewModel.todosOsProdutos é acessível
                 val favoriteProducts = viewModel.todosOsProdutos.filter { produto ->
-                    favoriteIds.contains(produto.id.toString())
+                    favoriteIds.contains(produto.id)
                 }
 
                 Triple(isDarkMode, favoriteProducts, notificationsEnabled)
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
                             favoriteProducts = favoriteProducts,
                             onToggleFavorite = { produto ->
                                 lifecycleScope.launch {
-                                    settingsDataStore.toggleFavorite(produto.id.toString())
+                                    settingsDataStore.toggleFavorite(produto.id)
                                 }
                             },
                             areNotificationsEnabled = notificationsEnabled,
