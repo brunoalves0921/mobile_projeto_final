@@ -35,7 +35,6 @@ fun CadastroProdutoScreen(
     val isEditMode = produtoId != null
 
     var produtoCarregado by remember { mutableStateOf<Produto?>(null) }
-    // AQUI ESTÁ A CORREÇÃO DO ERRO DE DIGITAÇÃO
     var lojaCarregada by remember { mutableStateOf<Loja?>(null) }
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
@@ -56,6 +55,7 @@ fun CadastroProdutoScreen(
                 if (it.videoUrl.isNotBlank()) videoUri = it.videoUrl.toUri()
             }
         } else if (lojaId != null) {
+            // Usa a função correta do LojaRepository para buscar os dados da loja
             lojaCarregada = LojaRepository.getLojaPorId(lojaId)
         }
         isSaving = false
@@ -110,7 +110,7 @@ fun CadastroProdutoScreen(
                                     uploadMessage = "Criando registo do produto..."
                                     uploadProgress = 0.0
                                     val loja = lojaCarregada!!
-                                    var novoProduto = Produto(nome=nome, descricao=descricao, preco=preco, lojaId=loja.id, lojaNome=loja.nome)
+                                    var novoProduto = Produto(nome=nome, descricao=descricao, preco=preco, lojaId=loja.id, lojaNome=loja.nome, latitude = loja.latitude, longitude = loja.longitude)
                                     val novoId = ProdutoRepository.salvar(novoProduto)
                                     novoProduto = novoProduto.copy(id = novoId)
                                     if(imagemUri != null) {

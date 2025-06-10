@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.ondetem.data.Produto
 import com.example.ondetem.notifications.NotificationReceiver
-import com.example.ondetem.ui.components.VideoPlayer // <-- Importa o novo componente
+import com.example.ondetem.ui.components.VideoPlayer
 import com.example.ondetem.viewmodel.ProdutoViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -46,7 +46,6 @@ fun DetalhesScreen(
     var produto by remember { mutableStateOf<Produto?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Busca os dados do produto de forma assíncrona
     LaunchedEffect(produtoId) {
         isLoading = true
         produto = viewModel.todosOsProdutos.firstOrNull { it.id == produtoId }
@@ -83,19 +82,14 @@ fun DetalhesScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // --- AQUI ESTÁ A MUDANÇA ---
-            // Substituímos o VideoView pelo nosso novo componente VideoPlayer
             if (produto!!.videoUrl.isNotBlank()) {
                 VideoPlayer(
                     videoUrl = produto!!.videoUrl,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp)
+                    modifier = Modifier.fillMaxWidth().height(220.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Lógica de favoritos
             val isFavorito = favoriteProducts.any { it.id == produto!!.id }
             val escalaIcone by animateFloatAsState(targetValue = if (isFavorito) 1.2f else 1.0f, label = "")
 
@@ -106,7 +100,6 @@ fun DetalhesScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Botão de criar lembrete
             OutlinedButton(onClick = {
                 if (!areNotificationsEnabled) {
                     Toast.makeText(context, "As notificações estão desativadas.", Toast.LENGTH_SHORT).show()
@@ -123,7 +116,9 @@ fun DetalhesScreen(
                     putExtra("produto_nome", produto!!.nome)
                     putExtra("loja_nome", produto!!.lojaNome)
                 }
+
                 val requestCode = produto!!.id.hashCode()
+
                 val pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                 val triggerAtMillis = Calendar.getInstance().timeInMillis + 10_000
                 alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)

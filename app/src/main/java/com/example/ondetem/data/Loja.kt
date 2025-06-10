@@ -1,15 +1,15 @@
+// Nenhuma mudança necessária
+// Caminho: app/src/main/java/com/example/ondetem/data/Loja.kt
 package com.example.ondetem.data
 
 import com.google.firebase.firestore.DocumentId
 
-/**
- * Modelo de dados para Loja, ajustado para o Firestore.
- * @DocumentId faz com que o Firestore preencha este campo com o ID único do documento.
- */
 data class Loja(
-    @DocumentId val id: String = "", // ID único do documento no Firestore
+    @DocumentId val id: String = "",
     val nome: String = "",
     val endereco: String = "",
     val telefone: String = "",
-    val donoId: String = "" // ID do vendedor do Firebase Auth
+    val donoId: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
 )
