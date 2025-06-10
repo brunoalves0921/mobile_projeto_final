@@ -5,9 +5,11 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -79,21 +81,32 @@ fun DetalhesScreen(
             Text("Vendido por: ${produto!!.lojaNome}", style = MaterialTheme.typography.titleSmall)
 
             if (produto!!.enderecoLoja.isNotBlank()) {
+                // AQUI ESTÁ A IMPLEMENTAÇÃO: Tornamos a Row clicável
                 Row(
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .fillMaxWidth()
+                        .clickable {
+                            // Cria a URI com as coordenadas da loja para abrir no mapa
+                            val gmmIntentUri =
+                                Uri.parse("geo:${produto!!.latitude},${produto!!.longitude}?q=${Uri.encode(produto!!.enderecoLoja)}")
+                            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                            // Inicia a atividade do mapa
+                            context.startActivity(mapIntent)
+                        },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.LocationOn,
                         contentDescription = "Endereço da loja",
                         modifier = Modifier.size(16.dp),
-                        tint = LocalContentColor.current.copy(alpha = 0.6f)
+                        tint = MaterialTheme.colorScheme.primary // Cor de destaque para indicar que é clicável
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = produto!!.enderecoLoja,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = LocalContentColor.current.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.primary // Cor de destaque
                     )
                 }
             }

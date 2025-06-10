@@ -41,6 +41,10 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // ADICIONE ESTA LINHA PARA INCLUIR TODOS OS ÍCONES DO MATERIAL DESIGN
+    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
     implementation(platform("com.google.firebase:firebase-bom:33.1.1"))

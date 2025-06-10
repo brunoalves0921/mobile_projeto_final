@@ -1,9 +1,13 @@
 package com.example.ondetem.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BrokenImage // Ícone universal e garantido
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,16 +40,31 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            if (produto.imagemUrl.isNotBlank()) {
-                AsyncImage(
-                    model = produto.imagemUrl,
-                    contentDescription = "Imagem do produto ${produto.nome}",
-                    modifier = Modifier
-                        .width(120.dp)
-                        .fillMaxHeight(),
-                    contentScale = ContentScale.Crop
-                )
+            Box(
+                modifier = Modifier
+                    .width(120.dp)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (produto.imagemUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = produto.imagemUrl,
+                        contentDescription = "Imagem do produto ${produto.nome}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Ícone final e corrigido
+                    Icon(
+                        imageVector = Icons.Outlined.BrokenImage,
+                        contentDescription = "Sem imagem",
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                }
             }
+
             Column(
                 modifier = Modifier
                     .padding(16.dp)
