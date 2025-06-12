@@ -18,15 +18,10 @@ import kotlinx.coroutines.tasks.await
 class ProdutoViewModel(application: Application) : AndroidViewModel(application) {
 
     val produtos = mutableStateListOf<Produto>()
-
-    // AQUI ESTÁ A CORREÇÃO:
-    // Tornamos a lista pública para leitura, mas apenas o ViewModel pode alterá-la.
-    var todosOsProdutos by mutableStateOf<List<Produto>>(emptyList())
-        private set
+    var todosOsProdutos = listOf<Produto>()
 
     var busca by mutableStateOf("")
         private set
-
     var isLoading by mutableStateOf(false)
         private set
     var statusMessage by mutableStateOf("Carregando produtos...")
@@ -63,7 +58,7 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
                         longitude = locationResult.longitude
                     }
 
-                    val listaOrdenada = todosOsProdutos.map { produto ->
+                    val produtosComDistancia = todosOsProdutos.map { produto ->
                         val lojaLocation = Location("Loja").apply {
                             latitude = produto.latitude
                             longitude = produto.longitude
@@ -72,11 +67,12 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
                         produto
                     }.sortedBy { it.distanciaEmMetros }
 
-                    todosOsProdutos = listaOrdenada.toList()
+                    todosOsProdutos = produtosComDistancia
 
+                    // APLICA A BUSCA ATUAL (SE HOUVER) NA LISTA ORDENADA
                     buscar(busca)
 
-                    Toast.makeText(getApplication(), "Pronto! Agora pesquise para ver os produtos mais próximos.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(getApplication(), "Ordenação por proximidade aplicada!", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(getApplication(), "Não foi possível obter a localização.", Toast.LENGTH_LONG).show()
                 }
