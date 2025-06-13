@@ -8,6 +8,10 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.toObjects
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 object LojaRepository {
@@ -15,42 +19,45 @@ object LojaRepository {
     private val db = FirebaseFirestore.getInstance()
     private val lojasCollection = db.collection("lojas")
 
+    // --- NOVA FUNÇÃO REATIVA ---
+    /**
+     * Cria um fluxo (Flow) que escuta as mudanças em TODAS as lojas em tempo real.
+     */
+    fun getTodasAsLojasFlow(): Flow<List<Loja>> = callbackFlow {
+        val listener = lojasCollection.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+            if (snapshot != null) {
+                val lojas = snapshot.toObjects<Loja>()
+                trySend(lojas)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
     suspend fun getLojasPorVendedor(vendedorId: String): List<Loja> {
         return try {
             val snapshot = lojasCollection.whereEqualTo("donoId", vendedorId).get().await()
             snapshot.toObjects(Loja::class.java)
         } catch (e: Exception) { emptyList() }
     }
-
     suspend fun getLojaPorId(lojaId: String): Loja? {
         return try {
             lojasCollection.document(lojaId).get().await().toObject(Loja::class.java)
         } catch (e: Exception) { null }
     }
-
     suspend fun salvar(loja: Loja) {
         lojasCollection.add(loja).await()
     }
-
-    /**
-     * NOVA FUNÇÃO: Atualiza os dados de uma loja existente.
-     * Esta função estava faltando e causava o erro.
-     */
     suspend fun atualizar(loja: Loja) {
-        // A loja já deve ter um ID do Firestore para ser atualizada.
         lojasCollection.document(loja.id).set(loja).await()
     }
-
-    /**
-     * NOVA FUNÇÃO: Deleta uma loja e todos os seus produtos.
-     */
     suspend fun deletar(lojaId: String) {
-        // Primeiro, deleta todos os produtos associados a esta loja.
         ProdutoRepository.deletarProdutosPorLoja(lojaId)
-        // Depois, deleta o documento da loja.
         lojasCollection.document(lojaId).delete().await()
     }
-
     fun buscarSugestoesDeEndereco(client: PlacesClient, query: String, token: AutocompleteSessionToken): Task<List<AutocompletePrediction>> {
         val request = FindAutocompletePredictionsRequest.builder()
             .setCountry("BR").setSessionToken(token).setQuery(query).build()
@@ -62,7 +69,6 @@ object LojaRepository {
             }
         }
     }
-
     fun buscarDetalhesDoLocal(client: PlacesClient, placeId: String): Task<Place> {
         val placeFields = listOf(Place.Field.ID, Place.Field.ADDRESS, Place.Field.LAT_LNG)
         val request = FetchPlaceRequest.newInstance(placeId, placeFields)

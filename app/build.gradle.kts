@@ -42,11 +42,15 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // ADICIONE ESTA LINHA PARA INCLUIR TODOS OS ÍCONES DO MATERIAL DESIGN
+    // ÍCONES
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
-    // ADICIONE ESTA LINHA PARA O CONSTRAINTLAYOUT
+    // CONSTRAINTLAYOUT
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+
+    // --- MUDANÇA AQUI ---
+    // ADICIONE A DEPENDÊNCIA DO GOOGLE MAPS PARA COMPOSE
+    implementation("com.google.maps.android:maps-compose:4.4.1")
 
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
@@ -56,7 +60,7 @@ dependencies {
     implementation("com.google.firebase:firebase-storage")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
     implementation("com.google.android.libraries.places:places:3.5.0")
-    implementation("com.google.maps.android:maps-compose:4.4.1")
+    // implementation("com.google.maps.android:maps-compose:4.4.1") // JÁ ADICIONADA ACIMA
     implementation("com.google.android.gms:play-services-location:21.2.0")
     implementation("com.google.accompanist:accompanist-permissions:0.31.5-beta")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
