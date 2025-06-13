@@ -2,21 +2,13 @@ package com.example.ondetem.ui
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -40,7 +32,8 @@ fun MainScreen(
     val currentRoute = remember { mutableStateOf("selecionar_perfil") }
 
     val bottomNavRoutes = listOf("home", "favoritos")
-    val showBottomBar = currentRoute.value in (bottomNavRoutes + listOf("menu_placeholder")) // Use a placeholder
+    // A visibilidade da BottomBar não precisa mais do placeholder de menu
+    val showBottomBar = currentRoute.value in bottomNavRoutes
     var menuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -50,44 +43,16 @@ fun MainScreen(
                     currentRoute = currentRoute.value,
                     canNavigateBack = navController.previousBackStackEntry != null && !bottomNavRoutes.contains(currentRoute.value),
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateTo = { }
-                )
-            }
-        },
-        bottomBar = {
-            AnimatedVisibility(visible = showBottomBar) {
-                NavigationBar {
-                    // Item Home (Padrão)
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, "Home") },
-                        label = { Text("Home") },
-                        selected = currentRoute.value == "home",
-                        onClick = {
-                            navController.navigate("home") { launchSingleTop = true; restoreState = true }
-                            currentRoute.value = "home"
-                        }
-                    )
-
-                    // Item Favoritos (Padrão)
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Favorite, "Favoritos") },
-                        label = { Text("Favoritos") },
-                        selected = currentRoute.value == "favoritos",
-                        onClick = {
-                            navController.navigate("favoritos") { launchSingleTop = true; restoreState = true }
-                            currentRoute.value = "favoritos"
-                        }
-                    )
-
-                    // AQUI ESTÁ A CORREÇÃO:
-                    // A própria RowScope da NavigationBar é usada para criar um item personalizado
-                    // que se comporta como os outros.
-                    this.NavigationBarItem(
-                        selected = false,
-                        onClick = { menuExpanded = true },
-                        icon = {
-                            Box { // O Box agora está dentro do 'icon', que é um lugar seguro
-                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    // --- MUDANÇA 1: Adicionar o menu de três pontinhos como uma "ação" ---
+                    actions = {
+                        // O menu só aparecerá nas telas principais do cliente
+                        if (currentRoute.value in bottomNavRoutes) {
+                            Box {
+                                // Ícone de três pontinhos que abre o menu
+                                IconButton(onClick = { menuExpanded = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                                }
+                                // O menu suspenso (Dropdown)
                                 DropdownMenu(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false }
@@ -112,13 +77,43 @@ fun MainScreen(
                                     )
                                 }
                             }
-                        },
-                        label = { Text("Menu") }
+                        }
+                    }
+                )
+            }
+        },
+        bottomBar = {
+            AnimatedVisibility(visible = showBottomBar) {
+                NavigationBar {
+                    // Item Home (Permanece)
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Home, "Home") },
+                        label = { Text("Home") },
+                        selected = currentRoute.value == "home",
+                        onClick = {
+                            navController.navigate("home") { launchSingleTop = true; restoreState = true }
+                            currentRoute.value = "home"
+                        }
                     )
+
+                    // Item Favoritos (Permanece)
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Favorite, "Favoritos") },
+                        label = { Text("Favoritos") },
+                        selected = currentRoute.value == "favoritos",
+                        onClick = {
+                            navController.navigate("favoritos") { launchSingleTop = true; restoreState = true }
+                            currentRoute.value = "favoritos"
+                        }
+                    )
+
+                    // --- MUDANÇA 2: REMOVER O ITEM DE MENU DAQUI ---
+                    // O bloco NavigationBarItem que continha o DropdownMenu foi removido.
                 }
             }
         }
     ) { padding ->
+        // O NavHost continua igual, sem alterações necessárias.
         NavHost(
             navController = navController, startDestination = "selecionar_perfil", modifier = Modifier.padding(padding),
             enterTransition = { fadeIn(animationSpec = tween(300)) }, exitTransition = { fadeOut(animationSpec = tween(300)) },
@@ -139,7 +134,7 @@ fun MainScreen(
                     onCadastrarLoja = { vendedorId -> navController.navigate("cadastro_loja/$vendedorId"); currentRoute.value = "cadastro_loja" },
                     onLogout = { navController.navigate("selecionar_perfil") { popUpTo(navController.graph.startDestinationId) { inclusive = true } }; navController.navigate("selecionar_perfil"); currentRoute.value = "selecionar_perfil" },
                     onLojaClick = { lojaId -> navController.navigate("detalhes_loja/$lojaId"); currentRoute.value = "detalhes_loja" },
-                    onEditLoja = { lojaId -> navController.navigate("editar_loja/$lojaId"); currentRoute.value = "editar_loja"} // Navega para a nova rota de edição
+                    onEditLoja = { lojaId -> navController.navigate("editar_loja/$lojaId"); currentRoute.value = "editar_loja"}
                 )
             }
 
@@ -148,18 +143,17 @@ fun MainScreen(
                 val vendedorId = backStackEntry.arguments?.getString("vendedorId")
                 CadastroLojaScreen(
                     vendedorId = vendedorId,
-                    lojaId = null, // Modo de adição
+                    lojaId = null,
                     onLojaSalva = { navController.popBackStack(); currentRoute.value = "perfil_vendedor" }
                 )
             }
 
-            // NOVA ROTA PARA EDITAR LOJA
             composable("editar_loja/{lojaId}") { backStackEntry ->
                 currentRoute.value = "editar_loja"
                 val lojaId = backStackEntry.arguments?.getString("lojaId")
                 CadastroLojaScreen(
-                    vendedorId = null, // Não precisa no modo de edição
-                    lojaId = lojaId,     // Passa o ID da loja para editar
+                    vendedorId = null,
+                    lojaId = lojaId,
                     onLojaSalva = { navController.popBackStack(); currentRoute.value = "perfil_vendedor" }
                 )
             }

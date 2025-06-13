@@ -1,5 +1,6 @@
 package com.example.ondetem.ui.components
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -13,22 +14,19 @@ fun TopBar(
     currentRoute: String,
     canNavigateBack: Boolean,
     onNavigateBack: () -> Unit,
-    onNavigateTo: (String) -> Unit
+    // --- MUDANÇA: Adicionamos um parâmetro para as ações ---
+    actions: @Composable RowScope.() -> Unit
 ) {
     TopAppBar(
         title = {
-            // AQUI ESTÁ A MUDANÇA:
-            // Verificamos se a rota atual é "home"
             if (currentRoute == "home") {
-                // Se for, exibimos o nome do app com um estilo personalizado
                 Text(
                     text = "Onde Tem?",
-                    style = MaterialTheme.typography.headlineSmall, // Um estilo de título maior
-                    fontWeight = FontWeight.Bold, // Em negrito
-                    color = MaterialTheme.colorScheme.primary // Usa a cor primária do tema
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             } else {
-                // Para todas as outras telas, exibimos o nome da rota formatado
                 Text(
                     text = currentRoute.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
                     maxLines = 1,
@@ -46,8 +44,7 @@ fun TopBar(
                 }
             }
         },
-        actions = {
-            // Vazio
-        }
+        // --- MUDANÇA: Usamos o novo parâmetro aqui ---
+        actions = actions
     )
 }
