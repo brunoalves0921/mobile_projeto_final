@@ -13,11 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import coil.compose.AsyncImage
 import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.utils.formatPrice
@@ -28,9 +29,9 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
     fun formatarDistancia(metros: Float?): String {
         if (metros == null) return ""
         return if (metros < 1000) {
-            "Aprox. ${metros.toInt()} m"
+            "${metros.toInt()} m"
         } else {
-            "Aprox. %.1f km".format(metros / 1000)
+            "%.1f km".format(metros / 1000)
         }
     }
 
@@ -38,16 +39,15 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.large, // Cantos mais arredondados
+        shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = CardDefaults.outlinedCardBorder()
     ) {
         Column {
-            // Área da Imagem
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(16f / 9f) // Proporção 16:9
+                    .aspectRatio(1f)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
@@ -68,55 +68,67 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 }
             }
 
-            // Área de Texto
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            // AQUI ESTÁ A MUDANÇA: Usando ConstraintLayout para controle total
+            ConstraintLayout(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .fillMaxWidth()
+                    .height(110.dp) // Altura fixa para a área de texto
             ) {
+                // Cria referências para cada elemento que vamos posicionar
+                val (nome, loja, preco, distancia) = createRefs()
+
+                // Nome do produto (preso ao topo)
                 Text(
                     text = produto.nome,
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.constrainAs(nome) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        width = Dimension.fillToConstraints
+                    }
                 )
 
-                Spacer(Modifier.height(4.dp))
-
+                // Nome da loja (logo abaixo do nome do produto)
                 Text(
                     text = produto.lojaNome,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = produto.enderecoLoja,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.constrainAs(loja) {
+                        top.linkTo(nome.bottom, margin = 2.dp)
+                        start.linkTo(parent.start)
+                    }
                 )
 
-                Spacer(Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = formatPrice(produto.precoEmCentavos),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    produto.distanciaEmMetros?.let {
-                        Text(
-                            text = formatarDistancia(it),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
+                // Preço (preso à parte inferior esquerda)
+                Text(
+                    text = formatPrice(produto.precoEmCentavos),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.constrainAs(preco) {
+                        bottom.linkTo(parent.bottom)
+                        start.linkTo(parent.start)
                     }
+                )
+
+                // Distância (presa à parte inferior direita)
+                produto.distanciaEmMetros?.let {
+                    Text(
+                        text = formatarDistancia(it),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.constrainAs(distancia) {
+                            bottom.linkTo(preco.bottom) // Alinha com a base do preço
+                            end.linkTo(parent.end)
+                        }
+                    )
                 }
             }
         }

@@ -45,6 +45,9 @@ dependencies {
     // ADICIONE ESTA LINHA PARA INCLUIR TODOS OS ÍCONES DO MATERIAL DESIGN
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
+    // ADICIONE ESTA LINHA PARA O CONSTRAINTLAYOUT
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
     implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
@@ -61,6 +64,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.compose.foundation:foundation:1.6.8")
+    implementation(libs.androidx.constraintlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

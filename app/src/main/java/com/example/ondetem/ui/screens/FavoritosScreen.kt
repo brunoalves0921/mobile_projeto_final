@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,7 +19,7 @@ import com.example.ondetem.ui.components.ProdutoCard
 @Composable
 fun FavoritosScreen(
     favoriteProducts: List<Produto>,
-    onItemClick: (String) -> Unit // <-- CORREÇÃO: MUDADO DE INT PARA STRING
+    onItemClick: (String) -> Unit
 ) {
     if (favoriteProducts.isEmpty()) {
         Box(
@@ -27,14 +29,21 @@ fun FavoritosScreen(
             Text("Você ainda não adicionou nenhum favorito.")
         }
     } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        // AQUI ESTÁ A MUDANÇA: Usando LazyVerticalGrid em vez de LazyColumn
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(favoriteProducts) { produto ->
+            items(
+                items = favoriteProducts,
+                key = { produto -> produto.id } // Usando a key para performance
+            ) { produto ->
+                // Reutilizando nosso ProdutoCard já redesenhado
                 ProdutoCard(produto = produto) {
-                    onItemClick(produto.id) // produto.id agora é uma String
+                    onItemClick(produto.id)
                 }
             }
         }
