@@ -35,6 +35,7 @@ import com.example.ondetem.viewmodel.ProdutoViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import kotlinx.coroutines.flow.firstOrNull
 import java.util.*
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -52,7 +53,8 @@ fun DetalhesScreen(
 
     LaunchedEffect(produtoId) {
         isLoading = true
-        produto = viewModel.todosOsProdutos.firstOrNull { it.id == produtoId }
+        // CORREÇÃO: Adicione .value para acessar a lista de produtos
+        produto = viewModel.todosOsProdutos.value.firstOrNull { it.id == produtoId }
         isLoading = false
     }
 

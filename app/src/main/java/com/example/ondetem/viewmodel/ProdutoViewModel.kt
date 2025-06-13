@@ -12,19 +12,22 @@ import com.example.ondetem.data.ProdutoRepository
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+// Importações necessárias
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class ProdutoViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Lista de produtos para a UI. É um mutableStateListOf para garantir que a UI
-    // reaja a mudanças (adição/remoção de itens).
     val produtos = mutableStateListOf<Produto>()
 
-    // Lista mestra interna com todos os produtos.
-    var todosOsProdutos = listOf<Produto>()
+    // ALTERAÇÃO 1: Transformar a lista mestra em um StateFlow.
+    // O _todosOsProdutos é privado e mutável.
+    private val _todosOsProdutos = MutableStateFlow<List<Produto>>(emptyList())
+    // O todosOsProdutos é público e imutável (só leitura), para ser observado pela UI.
+    val todosOsProdutos = _todosOsProdutos.asStateFlow()
 
-    // O texto da busca.
     var busca by mutableStateOf("")
         private set
 
@@ -33,7 +36,6 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
     var statusMessage by mutableStateOf("Carregando produtos...")
         private set
 
-    // Guarda a última localização obtida para não buscar novamente.
     private var ultimaLocalizacaoUsuario: Location? = null
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
 
@@ -45,8 +47,8 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             isLoading = true
             statusMessage = "Buscando produtos..."
-            todosOsProdutos = ProdutoRepository.listarTodos()
-            // Garante que, ao carregar, a busca e a lista de exibição estejam limpas.
+            // ALTERAÇÃO 2: O resultado do repositório agora é emitido para o StateFlow.
+            _todosOsProdutos.value = ProdutoRepository.listarTodos()
             busca = ""
             produtos.clear()
             isLoading = false
@@ -58,7 +60,6 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             isLoading = true
             try {
-                // Se já temos a localização, usamos ela. Se não, buscamos.
                 val userLocation = ultimaLocalizacaoUsuario ?: run {
                     statusMessage = "Obtendo sua localização..."
                     val locationResult = fusedLocationClient.getCurrentLocation(
@@ -67,7 +68,7 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
                     ).await()
 
                     if (locationResult != null) {
-                        ultimaLocalizacaoUsuario = locationResult // Armazena para uso futuro
+                        ultimaLocalizacaoUsuario = locationResult
                         locationResult
                     } else {
                         Toast.makeText(getApplication(), "Não foi possível obter a localização.", Toast.LENGTH_LONG).show()
@@ -77,8 +78,8 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
 
                 if (userLocation != null) {
                     statusMessage = "Calculando distâncias..."
-                    // Apenas atualiza a lista mestra com as distâncias e a nova ordem.
-                    todosOsProdutos = todosOsProdutos.map { produto ->
+                    // ALTERAÇÃO 3: Acessamos e atualizamos a lista através do .value do StateFlow.
+                    _todosOsProdutos.value = _todosOsProdutos.value.map { produto ->
                         val lojaLocation = Location("Loja").apply {
                             latitude = produto.latitude
                             longitude = produto.longitude
@@ -87,11 +88,7 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
                         produto
                     }.sortedBy { it.distanciaEmMetros }
 
-                    // APLICA a busca atual à nova lista ordenada.
-                    // Se a busca estiver vazia, a lista de exibição continuará vazia.
                     buscar(busca)
-
-                    //Toast.makeText(getApplication(), "Localização obtida! Agora pesquise para ver os produtos mais próximos.", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(getApplication(), "Erro ao obter localização: ${e.message}", Toast.LENGTH_LONG).show()
@@ -101,17 +98,11 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    /**
-     * Função de busca ATUALIZADA.
-     * Agora ela é a única responsável por popular a lista 'produtos'.
-     */
     fun buscar(texto: String) {
         busca = texto
-
-        // Se o texto da busca não estiver vazio, filtra a lista mestra.
-        // Se estiver vazio, o resultado é uma lista vazia.
         val resultados = if (texto.isNotBlank()) {
-            todosOsProdutos.filter {
+            // ALTERAÇÃO 4: Filtramos a lista a partir do .value do StateFlow.
+            _todosOsProdutos.value.filter {
                 it.nome.contains(texto, ignoreCase = true) ||
                         it.descricao.contains(texto, ignoreCase = true)
             }
@@ -119,7 +110,6 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
             emptyList()
         }
 
-        // Atualiza a lista da UI de forma explícita.
         produtos.clear()
         produtos.addAll(resultados)
     }
