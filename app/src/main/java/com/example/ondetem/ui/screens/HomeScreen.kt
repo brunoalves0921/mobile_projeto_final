@@ -31,10 +31,11 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
         permission = Manifest.permission.ACCESS_FINE_LOCATION
     )
 
-    // Efeito que ordena os produtos assim que a permissão é concedida
+    // Efeito que ordena os produtos em segundo plano assim que a permissão é concedida.
+    // O usuário não verá a lista até que ele pesquise.
     LaunchedEffect(locationPermissionState.status) {
         if (locationPermissionState.status.isGranted) {
-            viewModel.ordenarEExibirPorProximidade()
+            viewModel.ordenarPorProximidade()
         }
     }
 
@@ -66,12 +67,16 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = if (viewModel.busca.isNotBlank()) "Nenhum produto encontrado para '${viewModel.busca}'." else "Busque um produto ou permita a localização para ver os itens mais próximos.",
+                            text = if (viewModel.busca.isNotBlank()) "Nenhum produto encontrado para '${viewModel.busca}'." else "Busque um produto ou clique abaixo para ver os itens mais próximos.",
                             textAlign = TextAlign.Center
                         )
+                        // Este botão agora apenas pede a permissão. A ordenação é automática
+                        // quando a permissão é concedida, graças ao LaunchedEffect.
                         if (!locationPermissionState.status.isGranted) {
-                            Spacer(Modifier.height(16.dp))
-                            Button(onClick = { locationPermissionState.launchPermissionRequest() }) {
+                            Button(
+                                onClick = { locationPermissionState.launchPermissionRequest() },
+                                modifier = Modifier.padding(top = 16.dp)
+                            ) {
                                 Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text("Usar minha localização")
@@ -88,7 +93,7 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
                 ) {
                     items(
                         items = viewModel.produtos,
-                        key = { produto -> produto.id } // Chave estável para performance
+                        key = { produto -> produto.id }
                     ) { produto ->
                         ProdutoCard(produto = produto) {
                             onItemClick(produto.id)
