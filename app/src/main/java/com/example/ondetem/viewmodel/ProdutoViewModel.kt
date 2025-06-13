@@ -12,7 +12,6 @@ import com.example.ondetem.data.ProdutoRepository
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
-// Importações necessárias
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -22,15 +21,11 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
 
     val produtos = mutableStateListOf<Produto>()
 
-    // ALTERAÇÃO 1: Transformar a lista mestra em um StateFlow.
-    // O _todosOsProdutos é privado e mutável.
     private val _todosOsProdutos = MutableStateFlow<List<Produto>>(emptyList())
-    // O todosOsProdutos é público e imutável (só leitura), para ser observado pela UI.
     val todosOsProdutos = _todosOsProdutos.asStateFlow()
 
     var busca by mutableStateOf("")
         private set
-
     var isLoading by mutableStateOf(false)
         private set
     var statusMessage by mutableStateOf("Carregando produtos...")
@@ -39,22 +34,32 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
     private var ultimaLocalizacaoUsuario: Location? = null
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
 
+    // --- MUDANÇA PRINCIPAL ---
     init {
-        carregarTodosOsProdutos()
-    }
-
-    fun carregarTodosOsProdutos() {
+        // Agora o ViewModel se "inscreve" no fluxo de dados em tempo real.
         viewModelScope.launch {
             isLoading = true
-            statusMessage = "Buscando produtos..."
-            // ALTERAÇÃO 2: O resultado do repositório agora é emitido para o StateFlow.
-            _todosOsProdutos.value = ProdutoRepository.listarTodos()
-            busca = ""
-            produtos.clear()
-            isLoading = false
+            statusMessage = "Carregando produtos..."
+            // Coleta o fluxo do repositório. Sempre que a lista no Firestore mudar,
+            // o código dentro do `collect` será executado com a nova lista.
+            ProdutoRepository.listarTodosFlow().collect { produtosAtualizados ->
+                _todosOsProdutos.value = produtosAtualizados
+
+                // Se o usuário estiver com uma busca ativa, re-aplicamos o filtro
+                // para que a lista de resultados também seja atualizada.
+                if (busca.isNotBlank()) {
+                    buscar(busca)
+                }
+                isLoading = false // Desliga o loading após a primeira carga de dados
+            }
         }
     }
 
+    // A função carregarTodosOsProdutos() não é mais necessária, pois o init já é reativo.
+    // fun carregarTodosOsProdutos() { ... }
+
+    // NENHUMA MUDANÇA NECESSÁRIA AQUI.
+    // As funções abaixo já usam `_todosOsProdutos.value`, que agora está sempre atualizada.
     @SuppressLint("MissingPermission")
     fun ordenarPorProximidade() {
         viewModelScope.launch {
@@ -78,7 +83,6 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
 
                 if (userLocation != null) {
                     statusMessage = "Calculando distâncias..."
-                    // ALTERAÇÃO 3: Acessamos e atualizamos a lista através do .value do StateFlow.
                     _todosOsProdutos.value = _todosOsProdutos.value.map { produto ->
                         val lojaLocation = Location("Loja").apply {
                             latitude = produto.latitude
@@ -101,7 +105,6 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
     fun buscar(texto: String) {
         busca = texto
         val resultados = if (texto.isNotBlank()) {
-            // ALTERAÇÃO 4: Filtramos a lista a partir do .value do StateFlow.
             _todosOsProdutos.value.filter {
                 it.nome.contains(texto, ignoreCase = true) ||
                         it.descricao.contains(texto, ignoreCase = true)

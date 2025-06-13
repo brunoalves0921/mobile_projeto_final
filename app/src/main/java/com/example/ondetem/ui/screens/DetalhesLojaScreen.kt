@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+// IMPORT NECESSÁRIO PARA O NOVO MÉTODO
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.ondetem.data.Produto
@@ -32,16 +34,21 @@ fun DetalhesLojaScreen(
     onEditProduto: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var produtosDaLoja by remember { mutableStateOf<List<Produto>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+
+    // --- MUDANÇA 1: USAR O FLUXO DE DADOS ---
+    // Em vez de buscar a lista uma vez, agora "coletamos" o fluxo.
+    // A variável `produtosDaLoja` se tornará um `State` que o Compose observa.
+    // Qualquer nova emissão do Flow irá automaticamente recompor a tela.
+    // `initialValue = null` nos ajuda a exibir um loading inicial.
+    val produtosDaLoja by ProdutoRepository.getProdutosPorLojaFlow(lojaId)
+        .collectAsStateWithLifecycle(initialValue = null)
+
+    // Renomeado para não confundir com o carregamento inicial da lista
+    var isActionLoading by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf<Produto?>(null) }
 
-    // Efeito para buscar os produtos da loja
-    LaunchedEffect(lojaId) {
-        isLoading = true
-        produtosDaLoja = ProdutoRepository.getProdutosPorLoja(lojaId)
-        isLoading = false
-    }
+    // --- MUDANÇA 2: REMOVER O LaunchedEffect ---
+    // Não é mais necessário, pois o Flow cuida de buscar e atualizar os dados.
 
     // Dialog de confirmação para deletar um produto
     if (showDialog != null) {
@@ -53,11 +60,13 @@ fun DetalhesLojaScreen(
                 Button(
                     onClick = {
                         scope.launch {
-                            isLoading = true
+                            isActionLoading = true
                             ProdutoRepository.deletar(showDialog!!)
-                            produtosDaLoja = ProdutoRepository.getProdutosPorLoja(lojaId) // Atualiza a lista
+                            // --- MUDANÇA 3: REMOVER A ATUALIZAÇÃO MANUAL ---
+                            // Não precisamos mais da linha "produtosDaLoja = ...",
+                            // a atualização agora é automática!
                             showDialog = null
-                            isLoading = false
+                            isActionLoading = false
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
@@ -68,39 +77,45 @@ fun DetalhesLojaScreen(
     }
 
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAddProduto) {
-                Icon(Icons.Default.Add, contentDescription = "Adicionar Produto")
-            }
-        }
+        floatingActionButton = { FloatingActionButton(onClick = onAddProduto) { Icon(Icons.Default.Add, "Adicionar") } }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(16.dp))
             Text("Meus Produtos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
 
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+            // --- MUDANÇA 4: LÓGICA DE EXIBIÇÃO ATUALIZADA ---
+            // Usamos uma cópia local para a checagem de nulo
+            val produtos = produtosDaLoja
+
+            when {
+                // Se `produtos` é nulo, significa que o Flow ainda não emitiu o primeiro valor.
+                produtos == null || isActionLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
-            } else if (produtosDaLoja.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Nenhum produto cadastrado nesta loja ainda.")
+                // O Flow emitiu uma lista vazia.
+                produtos.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Nenhum produto cadastrado nesta loja ainda.")
+                    }
                 }
-            } else {
-                // --- GRADE DE PRODUTOS ORGANIZADA ---
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2), // Layout com 2 colunas
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(produtosDaLoja) { produto ->
-                        ProdutoGerenciavelCard(
-                            produto = produto,
-                            onEditClick = { onEditProduto(produto.id) },
-                            onDeleteClick = { showDialog = produto }
-                        )
+                // O Flow emitiu uma lista com produtos.
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(produtos) { produto ->
+                            ProdutoGerenciavelCard(
+                                produto = produto,
+                                onEditClick = { onEditProduto(produto.id) },
+                                onDeleteClick = { showDialog = produto }
+                            )
+                        }
                     }
                 }
             }
@@ -108,9 +123,7 @@ fun DetalhesLojaScreen(
     }
 }
 
-/**
- * Novo Card de Produto que inclui botões de Edição e Exclusão.
- */
+// O Composable `ProdutoGerenciavelCard` não precisa de nenhuma alteração.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProdutoGerenciavelCard(
@@ -122,10 +135,9 @@ fun ProdutoGerenciavelCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        onClick = onEditClick // O card inteiro é clicável para edição
+        onClick = onEditClick
     ) {
         Column {
-            // Imagem do Produto
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(produto.imagemUrl)
@@ -138,8 +150,6 @@ fun ProdutoGerenciavelCard(
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
                 contentScale = ContentScale.Crop
             )
-
-            // Informações do produto
             Column(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
@@ -151,17 +161,12 @@ fun ProdutoGerenciavelCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    // CORREÇÃO: Usar 'precoEmCentavos' e formatar para moeda
                     text = "R$ %.2f".format(produto.precoEmCentavos / 100.0),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-
-            // Divider para separar as informações dos botões
             Divider(modifier = Modifier.padding(horizontal = 8.dp))
-
-            // Botões de Ação
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
