@@ -15,18 +15,12 @@ object UserRepository {
     private val db = Firebase.firestore
     private val usersCollection = db.collection("users")
 
-    // --- NOVA FUNÇÃO ---
-    /**
-     * Obtém o token FCM atual do dispositivo e o salva no Firestore
-     * para o usuário atualmente logado.
-     */
     suspend fun fetchAndSaveFcmToken() {
         val userId = Firebase.auth.currentUser?.uid
         if (userId == null) {
             Log.e("UserRepository", "Usuário não logado, não é possível salvar o token FCM.")
             return
         }
-
         try {
             val token = Firebase.messaging.token.await()
             Log.d("UserRepository", "Token FCM obtido: $token")
@@ -35,7 +29,6 @@ object UserRepository {
             Log.e("UserRepository", "Falha ao obter o token FCM.", e)
         }
     }
-    // Dentro de UserRepository.kt
 
     fun getNotificationsFlow(userId: String): Flow<List<UserNotification>> = callbackFlow {
         val listener = usersCollection.document(userId)
@@ -53,9 +46,7 @@ object UserRepository {
             }
         awaitClose { listener.remove() }
     }
-    /**
-     * Salva ou atualiza o token de notificação (FCM Token) de um usuário no Firestore.
-     */
+
     suspend fun saveUserFcmToken(userId: String, token: String) {
         try {
             val tokenData = mapOf("fcmToken" to token)
@@ -65,5 +56,21 @@ object UserRepository {
             Log.e("UserRepository", "Erro ao salvar o FCM Token: ${e.message}", e)
         }
     }
-}
 
+    // --- NOVA FUNÇÃO ADICIONADA AQUI ---
+    /**
+     * Deleta uma notificação específica do histórico do usuário.
+     */
+    suspend fun deleteNotification(userId: String, notificationId: String) {
+        try {
+            usersCollection.document(userId)
+                .collection("userNotifications")
+                .document(notificationId)
+                .delete()
+                .await()
+            Log.d("UserRepository", "Notificação $notificationId deletada com sucesso.")
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Erro ao deletar notificação: ${e.message}", e)
+        }
+    }
+}

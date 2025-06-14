@@ -22,6 +22,7 @@ fun RoleSelectionScreen(onSelecionarCliente: () -> Unit, onSelecionarVendedor: (
     val context = LocalContext.current
 
     var isClienteLoading by remember { mutableStateOf(false) }
+    var isVendedorLoading by remember { mutableStateOf(false) } // Adicionado para o botão de vendedor
 
     Column(
         modifier = Modifier
@@ -36,26 +37,22 @@ fun RoleSelectionScreen(onSelecionarCliente: () -> Unit, onSelecionarVendedor: (
         )
         Spacer(modifier = Modifier.height(32.dp))
 
+        // --- BOTÃO SOU CLIENTE ---
         Button(
             onClick = {
                 isClienteLoading = true
                 scope.launch {
                     try {
-                        if (auth.currentUser != null) {
-                            auth.signOut()
+                        // Só cria um usuário anônimo se não houver um ou se o usuário logado for um vendedor.
+                        if (auth.currentUser == null || !auth.currentUser!!.isAnonymous) {
+                            if (auth.currentUser != null) {
+                                auth.signOut() // Desloga o vendedor antes de logar como cliente
+                            }
+                            auth.signInAnonymously().await()
+                            UserRepository.fetchAndSaveFcmToken()
                         }
-                        // 1. Faz o login anônimo
-                        auth.signInAnonymously().await()
-
-                        // 2. --- CORREÇÃO APLICADA AQUI ---
-                        // Após o login, busca e salva o token de notificação (FCM)
-                        UserRepository.fetchAndSaveFcmToken()
-
-                        // 3. Navega para a tela principal do cliente
                         onSelecionarCliente()
-
                     } catch (e: Exception) {
-                        Log.e("RoleSelectionScreen", "Falha no login anônimo", e)
                         Toast.makeText(context, "Falha na conexão. Tente novamente.", Toast.LENGTH_SHORT).show()
                     } finally {
                         isClienteLoading = false
@@ -63,25 +60,38 @@ fun RoleSelectionScreen(onSelecionarCliente: () -> Unit, onSelecionarVendedor: (
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isClienteLoading
+            enabled = !isClienteLoading && !isVendedorLoading
         ) {
             if (isClienteLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
             } else {
                 Text("Sou Cliente")
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
+        // --- BOTÃO SOU VENDEDOR ---
         OutlinedButton(
-            onClick = onSelecionarVendedor,
-            modifier = Modifier.fillMaxWidth()
+            onClick = {
+                isVendedorLoading = true
+                scope.launch {
+                    // Garante que qualquer usuário anônimo seja deslogado
+                    // antes de ir para a tela de login do vendedor.
+                    if (auth.currentUser != null && auth.currentUser!!.isAnonymous) {
+                        auth.signOut()
+                    }
+                    onSelecionarVendedor()
+                    isVendedorLoading = false // Reseta o estado
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isClienteLoading && !isVendedorLoading
         ) {
-            Text("Sou Vendedor")
+            if (isVendedorLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            } else {
+                Text("Sou Vendedor")
+            }
         }
     }
 }

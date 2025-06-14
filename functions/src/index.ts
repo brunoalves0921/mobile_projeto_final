@@ -1,5 +1,6 @@
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
+import * as logger from "firebase-functions/logger"; // Adicionando logger para mais detalhes
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -11,14 +12,7 @@ export const checarQuedaDePreco = onDocumentUpdated(
     const dadosAntigos = event.data?.before.data();
     const dadosNovos = event.data?.after.data();
 
-    if (!dadosAntigos || !dadosNovos) {
-      return;
-    }
-
-    const precoAntigo = dadosAntigos.precoEmCentavos;
-    const precoNovo = dadosNovos.precoEmCentavos;
-
-    if (precoNovo >= precoAntigo) {
+    if (!dadosAntigos || !dadosNovos || dadosNovos.precoEmCentavos >= dadosAntigos.precoEmCentavos) {
       return;
     }
 
@@ -31,32 +25,23 @@ export const checarQuedaDePreco = onDocumentUpdated(
       return;
     }
 
-    const promises = alertasSnapshot.docs.map(async (doc) => {
+    const tasks: Promise<unknown>[] = [];
+
+    alertasSnapshot.forEach((doc) => {
       const alerta = doc.data();
       const precoDesejado = alerta.desiredPriceInCents;
 
-      if (precoNovo <= precoDesejado) {
-        const fcmToken = (
-          await db.collection("users").doc(alerta.userId).get()
-        ).data()?.fcmToken;
-
+      if (dadosNovos.precoEmCentavos <= precoDesejado) {
+        const userId = alerta.userId;
         const notificationTitle = "Alerta de Preço! 📉";
-        const notificationBody = `O produto "${
-          alerta.produtoNome
-        }" baixou para R$${(precoNovo / 100).toFixed(2)}!`;
+        const notificationBody = `O produto "${alerta.produtoNome}" baixou para R$${(dadosNovos.precoEmCentavos / 100).toFixed(2)}!`;
 
-        if (fcmToken) {
-          const message = {
-            notification: {title: notificationTitle, body: notificationBody},
-            token: fcmToken,
-          };
-          await messaging.send(message);
-        }
+        logger.info(`(DEBUG) Alerta ativado para userId: ${userId}`);
 
-        // --- MUDANÇA AQUI ---
-        // Salva a notificação em uma nova coleção para o histórico do usuário
-        await db.collection("users")
-          .doc(alerta.userId)
+        // Tarefa 1: Criar o registro de notificação no histórico
+        const saveNotificationTask = db
+          .collection("users")
+          .doc(userId)
           .collection("userNotifications")
           .add({
             title: notificationTitle,
@@ -64,13 +49,33 @@ export const checarQuedaDePreco = onDocumentUpdated(
             productId: alerta.productId,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
           });
+        tasks.push(saveNotificationTask);
+        logger.info("(DEBUG) Tarefa de salvar histórico adicionada.");
 
-        return doc.ref.delete();
-      } else {
-        return Promise.resolve();
+        // Tarefa 2: Enviar a notificação Push
+        const sendPushTask = db.collection("users").doc(userId).get().then((userDoc) => {
+            const fcmToken = userDoc.data()?.fcmToken;
+            if (fcmToken) {
+              const message = {
+                notification: {title: notificationTitle, body: notificationBody},
+                token: fcmToken,
+              };
+              logger.info(`(DEBUG) Enviando notificação para o token: ${fcmToken}`);
+              return messaging.send(message);
+            }
+            logger.warn(`(DEBUG) Token FCM não encontrado para userId: ${userId}`);
+            return null;
+          });
+        tasks.push(sendPushTask);
+        logger.info("(DEBUG) Tarefa de enviar push adicionada.");
+
+        // --- MUDANÇA PRINCIPAL PARA O TESTE ---
+        // Tarefa 3: Deletar o alerta temporário (DESATIVADA)
+        logger.warn(`(DEBUG) A exclusão do priceAlert ${doc.id} foi DESATIVADA para este teste.`);
+        tasks.push(doc.ref.delete()); // <--- LINHA COMENTADA
       }
     });
 
-    return Promise.all(promises);
+    return Promise.all(tasks);
   }
 );

@@ -29,12 +29,17 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
-    // Escopo para lançar a coroutine de login
     val scope = rememberCoroutineScope()
 
-    // O LaunchedEffect para login automático não é mais necessário aqui,
-    // pois o ideal é que a tela de seleção de perfil já lide com o estado logado.
-    // Manter pode causar loops de navegação. Vamos remover por segurança.
+    // --- LÓGICA DE LOGIN AUTOMÁTICO RESTAURADA E CORRIGIDA ---
+    LaunchedEffect(Unit) {
+        val currentUser = auth.currentUser
+        // A verificação `!currentUser.isAnonymous` garante que isso só aconteça para vendedores
+        if (currentUser != null && !currentUser.isAnonymous) {
+            Toast.makeText(context, "Bem-vindo de volta!", Toast.LENGTH_SHORT).show()
+            onLoginSucesso()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -71,27 +76,18 @@ fun LoginScreen(
             Button(
                 onClick = {
                     if (email.isNotBlank() && senha.isNotBlank()) {
-                        // --- LÓGICA DE LOGIN ATUALIZADA ---
                         scope.launch {
                             isLoading = true
                             try {
-                                // 1. Tenta fazer o login com e-mail e senha
                                 auth.signInWithEmailAndPassword(email.trim(), senha.trim()).await()
-
-                                // 2. Se o login for bem-sucedido, busca e salva o token FCM
                                 Log.d("LoginScreen", "Login do vendedor bem-sucedido, salvando token FCM...")
                                 UserRepository.fetchAndSaveFcmToken()
-
-                                // 3. Mostra a mensagem de sucesso e navega
                                 Toast.makeText(context, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
                                 onLoginSucesso()
-
                             } catch (e: Exception) {
-                                // Em caso de qualquer falha (login ou salvar token), mostra o erro
                                 Log.e("LoginScreen", "Falha no login", e)
                                 Toast.makeText(context, "Falha no login: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                             } finally {
-                                // Garante que o indicador de loading seja desativado
                                 isLoading = false
                             }
                         }
