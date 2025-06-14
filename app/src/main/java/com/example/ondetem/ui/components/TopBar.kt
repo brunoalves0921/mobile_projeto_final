@@ -11,28 +11,19 @@ import androidx.compose.ui.text.style.TextOverflow
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
-    currentRoute: String,
+    // --- MUDANÇA AQUI: NOVO PARÂMETRO PARA O TÍTULO ---
+    title: String,
     canNavigateBack: Boolean,
     onNavigateBack: () -> Unit,
-    // --- MUDANÇA: Adicionamos um parâmetro para as ações ---
     actions: @Composable RowScope.() -> Unit
 ) {
     TopAppBar(
         title = {
-            if (currentRoute == "home") {
-                Text(
-                    text = "Onde Tem?",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            } else {
-                Text(
-                    text = currentRoute.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            Text(
+                text = title, // Usa o novo parâmetro diretamente
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
         navigationIcon = {
             if (canNavigateBack) {
@@ -44,7 +35,6 @@ fun TopBar(
                 }
             }
         },
-        // --- MUDANÇA: Usamos o novo parâmetro aqui ---
         actions = actions
     )
 }

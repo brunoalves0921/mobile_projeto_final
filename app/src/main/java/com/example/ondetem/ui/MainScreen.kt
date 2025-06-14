@@ -36,7 +36,7 @@ fun MainScreen(
     onToggleFavorite: (Produto) -> Unit,
     areNotificationsEnabled: Boolean,
     onToggleNotifications: () -> Unit,
-    unreadNotificationCount: Int // <-- NOVO PARÂMETRO
+    unreadNotificationCount: Int
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val notificationPermissionState = rememberPermissionState(
@@ -53,6 +53,28 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val topBarTitle by derivedStateOf {
+        when {
+            currentRoute?.startsWith("detalhes/") == true -> {
+                val produtoId = navBackStackEntry?.arguments?.getString("id")
+                viewModel.todosOsProdutos.value.find { it.id == produtoId }?.nome ?: "Detalhes"
+            }
+            currentRoute == "home" -> "Onde Tem?"
+            currentRoute == "favoritos" -> "Favoritos"
+            currentRoute == "mapa" -> "Mapa de Lojas"
+            currentRoute == "notificacoes" -> "Meus Alertas"
+            currentRoute == "config" -> "Configurações"
+            currentRoute == "ajuda" -> "Ajuda"
+            currentRoute == "perfil_vendedor" -> "Meu Perfil"
+            currentRoute?.startsWith("detalhes_loja/") == true -> "Detalhes da Loja"
+            currentRoute?.startsWith("editar_produto/") == true -> "Editar Produto"
+            currentRoute?.startsWith("cadastro_produto/") == true -> "Novo Produto"
+            currentRoute?.startsWith("editar_loja/") == true -> "Editar Loja"
+            currentRoute?.startsWith("cadastro_loja/") == true -> "Nova Loja"
+            else -> currentRoute?.replaceFirstChar { it.titlecase() } ?: ""
+        }
+    }
+
     val navItems = listOf(
         NavItem("home", "Home", Icons.Default.Home),
         NavItem("mapa", "Mapa", Icons.Default.Map),
@@ -64,26 +86,29 @@ fun MainScreen(
     val showBottomBar = currentRoute in bottomNavRoutes
     var menuExpanded by remember { mutableStateOf(false) }
 
+    // --- MUDANÇA AQUI ---
+    // Lista de telas que NÃO devem ter o menu de três pontinhos
+    val screensWithoutMenu = listOf("login", "cadastro", "selecionar_perfil")
+
     Scaffold(
         topBar = {
-            if (currentRoute != "selecionar_perfil") {
+            if (currentRoute !in screensWithoutMenu) {
                 TopBar(
-                    currentRoute = currentRoute ?: "",
+                    title = topBarTitle,
                     canNavigateBack = navController.previousBackStackEntry != null && currentRoute !in bottomNavRoutes,
                     onNavigateBack = { navController.popBackStack() },
                     actions = {
-                        if (currentRoute in bottomNavRoutes) {
-                            Box {
-                                IconButton(onClick = { menuExpanded = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                                }
-                                DropdownMenu(
-                                    expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false }
-                                ) {
-                                    DropdownMenuItem(text = { Text("Configurações") }, onClick = { navController.navigate("config"); menuExpanded = false })
-                                    DropdownMenuItem(text = { Text("Ajuda") }, onClick = { navController.navigate("ajuda"); menuExpanded = false })
-                                }
+                        // A condição foi movida para fora, para exibir em mais telas
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false }
+                            ) {
+                                DropdownMenuItem(text = { Text("Configurações") }, onClick = { navController.navigate("config"); menuExpanded = false })
+                                DropdownMenuItem(text = { Text("Ajuda") }, onClick = { navController.navigate("ajuda"); menuExpanded = false })
                             }
                         }
                     }
@@ -106,10 +131,9 @@ fun MainScreen(
                             },
                             label = { Text(item.label) },
                             icon = {
-                                // --- MUDANÇA AQUI: LÓGICA DA BADGE ---
                                 if (item.route == "notificacoes" && unreadNotificationCount > 0) {
                                     BadgedBox(
-                                        badge = { Badge() } // Exibe uma bolinha vermelha
+                                        badge = { Badge() }
                                     ) {
                                         Icon(item.icon, contentDescription = item.label)
                                     }
@@ -124,17 +148,16 @@ fun MainScreen(
         }
     ) { padding ->
         NavHost(
-            navController = navController, startDestination = "selecionar_perfil", modifier = Modifier.padding(padding),
+            navController = navController,
+            startDestination = "selecionar_perfil",
+            modifier = Modifier.padding(padding),
             enterTransition = { fadeIn(animationSpec = tween(300)) }, exitTransition = { fadeOut(animationSpec = tween(300)) },
             popEnterTransition = { fadeIn(animationSpec = tween(300)) }, popExitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
             composable("home") { HomeScreen(viewModel) { id -> navController.navigate("detalhes/$id") } }
             composable("favoritos") { FavoritosScreen(favoriteProducts) { id -> navController.navigate("detalhes/$id") } }
             composable("mapa") { MapaScreen() }
-
-            // --- MUDANÇA 2: ADICIONAR A ROTA PARA A NOVA TELA ---
             composable("notificacoes") { NotificacoesScreen() }
-
             composable("config") { ConfiguracoesScreen(viewModel, darkMode, onToggleDarkMode, areNotificationsEnabled, onToggleNotifications) }
             composable("ajuda") { AjudaScreen() }
             composable("detalhes/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id") ?: return@composable; DetalhesScreen(id, viewModel, favoriteProducts, onToggleFavorite, areNotificationsEnabled) }

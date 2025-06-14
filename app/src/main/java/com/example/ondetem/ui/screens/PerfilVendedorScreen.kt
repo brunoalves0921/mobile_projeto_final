@@ -1,6 +1,5 @@
 package com.example.ondetem.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,16 +13,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.ondetem.data.Loja
 import com.example.ondetem.data.LojaRepository
 import com.example.ondetem.data.Vendedor
+import com.example.ondetem.data.VendedorRepository // <-- IMPORT ADICIONADO
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +30,6 @@ fun PerfilVendedorScreen(
     onLojaClick: (String) -> Unit,
     onEditLoja: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val scope = rememberCoroutineScope()
 
@@ -44,26 +40,24 @@ fun PerfilVendedorScreen(
 
     fun refreshLojas() {
         scope.launch {
-            isLoading = true
             vendedor?.uid?.let {
                 lojas = LojaRepository.getLojasPorVendedor(it)
             }
-            isLoading = false
         }
     }
 
     LaunchedEffect(Unit) {
+        isLoading = true
         val currentUser = auth.currentUser
         if (currentUser == null) {
             onLogout()
             return@LaunchedEffect
         }
-        val uid = currentUser.uid
         try {
-            val vendedorDoc = FirebaseFirestore.getInstance().collection("vendedores").document(uid).get().await()
-            vendedor = vendedorDoc.toObject(Vendedor::class.java)
+            // --- MUDANÇA AQUI: USA O REPOSITÓRIO ---
+            vendedor = VendedorRepository.getVendedor(currentUser.uid)
             refreshLojas()
-        } catch (e: Exception) {
+        } finally {
             isLoading = false
         }
     }
@@ -91,19 +85,11 @@ fun PerfilVendedorScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Meu Perfil de Vendedor") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                ),
                 actions = { TextButton(onClick = { auth.signOut(); onLogout() }) { Text("Logout") } }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { vendedor?.uid?.let { onCadastrarLoja(it) } },
-                containerColor = MaterialTheme.colorScheme.primary, // Usando a cor primária
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
+            FloatingActionButton(onClick = { vendedor?.uid?.let { onCadastrarLoja(it) } }) {
                 Icon(Icons.Default.Add, "Cadastrar Nova Loja")
             }
         }
@@ -114,7 +100,14 @@ fun PerfilVendedorScreen(
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)) {
                     item {
-                        Text("Bem-vindo(a), ${vendedor?.nome ?: ""}!", style = MaterialTheme.typography.headlineMedium)
+                        // --- MUDANÇA AQUI: EXIBE O NOME OU O E-MAIL ---
+                        val nomeDisplay = if (vendedor?.nome?.isNotBlank() == true) {
+                            vendedor?.nome
+                        } else {
+                            // Se o nome estiver em branco, mostra o e-mail como alternativa
+                            auth.currentUser?.email
+                        }
+                        Text("Bem-vindo(a), ${nomeDisplay ?: ""}!", style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.height(24.dp))
                         Text("Suas Lojas", style = MaterialTheme.typography.titleLarge)
                     }
