@@ -1,6 +1,7 @@
 package com.example.ondetem.ui.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -29,13 +30,14 @@ import coil.compose.AsyncImage
 import com.example.ondetem.data.PriceAlertRepository
 import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.components.VideoPlayer
-import com.example.ondetem.ui.utils.formatPrice
+import com.example.ondetem.ui.utils.CurrencyVisualTransformation
 import com.example.ondetem.viewmodel.ProdutoViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.launch
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun DetalhesScreen(
@@ -50,11 +52,10 @@ fun DetalhesScreen(
     var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
 
-    // --- ESTADOS PARA O NOVO DIÁLOGO DE ALERTA ---
     var showPriceAlertDialog by remember { mutableStateOf(false) }
     var desiredPrice by remember { mutableStateOf("") }
 
-    LaunchedEffect(produtoId) {
+    LaunchedEffect(produtoId, viewModel.todosOsProdutos.value) {
         isLoading = true
         produto = viewModel.todosOsProdutos.value.firstOrNull { it.id == produtoId }
         isLoading = false
@@ -65,34 +66,43 @@ fun DetalhesScreen(
     } else if (produto == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Produto não encontrado.") }
     } else {
-        // --- DIÁLOGO PARA CRIAR ALERTA DE PREÇO ---
+        val produtoNaoNulo = produto!!
+
+        // Diálogo para criar o alerta de preço
         if (showPriceAlertDialog) {
             AlertDialog(
                 onDismissRequest = { showPriceAlertDialog = false },
                 title = { Text("Criar Alerta de Preço") },
                 text = {
                     Column {
-                        Text("Avise-me quando o preço de '${produto!!.nome}' for menor ou igual a:")
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Avise-me quando o preço de '${produtoNaoNulo.nome}' for menor ou igual a:")
+                        Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
                             value = desiredPrice,
-                            onValueChange = { desiredPrice = it.filter { char -> char.isDigit() } },
-                            label = { Text("Preço desejado (Ex: 1990)") },
-                            prefix = { Text("R$") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            onValueChange = {
+                                val newText = it.filter { char -> char.isDigit() }
+                                if (newText.length <= 10) {
+                                    desiredPrice = newText
+                                }
+                            },
+                            label = { Text("Preço desejado") },
+                            // --- MUDANÇA APLICADA AQUI ---
+                            visualTransformation = CurrencyVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         )
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
+                            // O valor em `desiredPrice` é apenas dígitos (ex: "1990")
                             val priceInCents = desiredPrice.toLongOrNull()
                             if (priceInCents == null || priceInCents <= 0) {
                                 Toast.makeText(context, "Por favor, insira um preço válido.", Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
                             scope.launch {
-                                PriceAlertRepository.salvarAlerta(produto!!, priceInCents)
+                                PriceAlertRepository.salvarAlerta(produtoNaoNulo, priceInCents)
                                 Toast.makeText(context, "Alerta de preço criado com sucesso!", Toast.LENGTH_LONG).show()
                                 desiredPrice = ""
                                 showPriceAlertDialog = false
@@ -106,58 +116,61 @@ fun DetalhesScreen(
             )
         }
 
-
         // Layout principal da tela
         Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
-            Text(produto!!.nome, style = MaterialTheme.typography.headlineMedium)
-            Text(produto!!.descricao, style = MaterialTheme.typography.bodyMedium)
+            Text(produtoNaoNulo.nome, style = MaterialTheme.typography.headlineMedium)
+            Text(produtoNaoNulo.descricao, style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Preço: ${formatPrice(produto!!.precoEmCentavos)}")
-            Text("Vendido por: ${produto!!.lojaNome}", style = MaterialTheme.typography.titleSmall)
+            Text("Preço: R$${"%.2f".format(produtoNaoNulo.precoEmCentavos / 100.0)}")
+            Text("Vendido por: ${produtoNaoNulo.lojaNome}", style = MaterialTheme.typography.titleSmall)
 
-            if (produto!!.enderecoLoja.isNotBlank()) {
+            if (produtoNaoNulo.enderecoLoja.isNotBlank()) {
                 Row(
                     modifier = Modifier.padding(top = 4.dp).fillMaxWidth().clickable {
-                        val gmmIntentUri = Uri.parse("geo:${produto!!.latitude},${produto!!.longitude}?q=${Uri.encode(produto!!.enderecoLoja)}")
+                        val gmmIntentUri = Uri.parse("geo:${produtoNaoNulo.latitude},${produtoNaoNulo.longitude}?q=${Uri.encode(produtoNaoNulo.enderecoLoja)}")
                         context.startActivity(Intent(Intent.ACTION_VIEW, gmmIntentUri))
                     },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Outlined.LocationOn, "Endereço", Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = produto!!.enderecoLoja, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(text = produtoNaoNulo.enderecoLoja, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (produto!!.imagemUrl.isNotBlank()) {
-                AsyncImage(model = produto!!.imagemUrl, "Imagem", Modifier.fillMaxWidth().height(220.dp), contentScale = ContentScale.Crop)
+            if (produtoNaoNulo.imagemUrl.isNotBlank()) {
+                AsyncImage(model = produtoNaoNulo.imagemUrl, "Imagem", Modifier.fillMaxWidth().height(220.dp), contentScale = ContentScale.Crop)
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            if (produto!!.videoUrl.isNotBlank()) {
-                VideoPlayer(videoUrl = produto!!.videoUrl, modifier = Modifier.fillMaxWidth().height(220.dp))
+            if (produtoNaoNulo.videoUrl.isNotBlank()) {
+                VideoPlayer(videoUrl = produtoNaoNulo.videoUrl, modifier = Modifier.fillMaxWidth().height(220.dp))
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            val isFavorito = favoriteProducts.any { it.id == produto!!.id }
+            val isFavorito = favoriteProducts.any { it.id == produtoNaoNulo.id }
             val escalaIcone by animateFloatAsState(targetValue = if (isFavorito) 1.2f else 1.0f, label = "")
 
-            Button(onClick = { onToggleFavorite(produto!!) }) {
+            Button(onClick = { onToggleFavorite(produtoNaoNulo) }) {
                 Icon(if (isFavorito) Icons.Default.Favorite else Icons.Default.FavoriteBorder, "Favoritar", tint = if (isFavorito) MaterialTheme.colorScheme.error else LocalContentColor.current, modifier = Modifier.scale(escalaIcone))
                 Spacer(Modifier.width(8.dp))
                 Text(if (isFavorito) "Remover dos Favoritos" else "Adicionar aos Favoritos")
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            // --- BOTÃO ATUALIZADO PARA O NOVO SISTEMA ---
+            val postNotificationPermission = rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
+
             OutlinedButton(onClick = {
                 if (!areNotificationsEnabled) {
                     Toast.makeText(context, "As notificações estão desativadas nas configurações do app.", Toast.LENGTH_SHORT).show()
                     return@OutlinedButton
                 }
-                // Abre o diálogo para criar o alerta
-                showPriceAlertDialog = true
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !postNotificationPermission.status.isGranted) {
+                    postNotificationPermission.launchPermissionRequest()
+                } else {
+                    showPriceAlertDialog = true
+                }
             }) {
                 Icon(Icons.Default.Notifications, contentDescription = "Criar Alerta de Preço")
                 Spacer(Modifier.width(8.dp))

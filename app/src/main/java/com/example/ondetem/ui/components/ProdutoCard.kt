@@ -21,7 +21,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import coil.compose.AsyncImage
 import com.example.ondetem.data.Produto
-import com.example.ondetem.ui.utils.formatPrice
+import com.example.ondetem.ui.utils.formatPrice // <-- IMPORT ADICIONADO AQUI
 
 @Composable
 fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
@@ -68,17 +68,14 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 }
             }
 
-            // AQUI ESTÁ A MUDANÇA: Usando ConstraintLayout para controle total
             ConstraintLayout(
                 modifier = Modifier
                     .padding(12.dp)
                     .fillMaxWidth()
-                    .height(110.dp) // Altura fixa para a área de texto
+                    .height(110.dp)
             ) {
-                // Cria referências para cada elemento que vamos posicionar
                 val (nome, loja, preco, distancia) = createRefs()
 
-                // Nome do produto (preso ao topo)
                 Text(
                     text = produto.nome,
                     style = MaterialTheme.typography.titleMedium,
@@ -93,7 +90,6 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                     }
                 )
 
-                // Nome da loja (logo abaixo do nome do produto)
                 Text(
                     text = produto.lojaNome,
                     style = MaterialTheme.typography.bodySmall,
@@ -106,9 +102,8 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                     }
                 )
 
-                // Preço (preso à parte inferior esquerda)
                 Text(
-                    text = formatPrice(produto.precoEmCentavos),
+                    text = formatPrice(produto.precoEmCentavos), // <-- A FUNÇÃO SENDO USADA AQUI
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -118,14 +113,13 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                     }
                 )
 
-                // Distância (presa à parte inferior direita)
                 produto.distanciaEmMetros?.let {
                     Text(
                         text = formatarDistancia(it),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.constrainAs(distancia) {
-                            bottom.linkTo(preco.bottom) // Alinha com a base do preço
+                            bottom.linkTo(preco.bottom)
                             end.linkTo(parent.end)
                         }
                     )

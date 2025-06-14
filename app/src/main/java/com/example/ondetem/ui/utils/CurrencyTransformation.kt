@@ -13,14 +13,10 @@ class CurrencyVisualTransformation(
     private val numberFormat = NumberFormat.getCurrencyInstance(locale)
 
     override fun filter(text: AnnotatedString): TransformedText {
-        // Limpa o texto, mantendo apenas os dígitos
         val digitsOnly = text.text.filter { it.isDigit() }
         val amount = digitsOnly.toLongOrNull() ?: 0L
-
-        // Formata o valor numérico como moeda
         val formattedAmount = numberFormat.format(amount / 100.0)
 
-        // Mapeia os offsets para que o cursor se posicione corretamente
         val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
                 return formattedAmount.length

@@ -1,10 +1,7 @@
 package com.example.ondetem.ui
 
 import android.Manifest
-import android.os.Build // Adicione este import
-import com.google.accompanist.permissions.ExperimentalPermissionsApi // Adicione este import
-import com.google.accompanist.permissions.isGranted // Adicione este import
-import com.google.accompanist.permissions.rememberPermissionState // Adicione este import
+import android.os.Build
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -15,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -24,10 +20,13 @@ import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.components.TopBar
 import com.example.ondetem.ui.screens.*
 import com.example.ondetem.viewmodel.ProdutoViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 
 data class NavItem(val route: String, val label: String, val icon: ImageVector)
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class) // Adicione ExperimentalPermissionsApi aqui
+@OptIn(ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     viewModel: ProdutoViewModel,
@@ -36,29 +35,29 @@ fun MainScreen(
     favoriteProducts: List<Produto>,
     onToggleFavorite: (Produto) -> Unit,
     areNotificationsEnabled: Boolean,
-    onToggleNotifications: () -> Unit
+    onToggleNotifications: () -> Unit,
+    unreadNotificationCount: Int // <-- NOVO PARÂMETRO
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val notificationPermissionState = rememberPermissionState(
             permission = Manifest.permission.POST_NOTIFICATIONS
         )
-        // Pede a permissão assim que a tela é carregada, se ainda não foi concedida
         LaunchedEffect(Unit) {
             if (!notificationPermissionState.status.isGranted) {
                 notificationPermissionState.launchPermissionRequest()
             }
         }
     }
+
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // --- MUDANÇA 1: ADICIONAR "NOTIFICAÇÕES" AOS ITENS DE NAVEGAÇÃO ---
     val navItems = listOf(
         NavItem("home", "Home", Icons.Default.Home),
         NavItem("mapa", "Mapa", Icons.Default.Map),
         NavItem("favoritos", "Favoritos", Icons.Default.Favorite),
-        NavItem("notificacoes", "Alertas", Icons.Default.Notifications) // <-- NOVO ITEM
+        NavItem("notificacoes", "Alertas", Icons.Default.Notifications)
     )
     val bottomNavRoutes = navItems.map { it.route }
 
@@ -95,15 +94,27 @@ fun MainScreen(
             AnimatedVisibility(visible = showBottomBar) {
                 NavigationBar {
                     navItems.forEach { item ->
+                        val isSelected = currentRoute == item.route
                         NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) },
-                            selected = currentRoute == item.route,
+                            selected = isSelected,
                             onClick = {
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.startDestinationId) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
+                                }
+                            },
+                            label = { Text(item.label) },
+                            icon = {
+                                // --- MUDANÇA AQUI: LÓGICA DA BADGE ---
+                                if (item.route == "notificacoes" && unreadNotificationCount > 0) {
+                                    BadgedBox(
+                                        badge = { Badge() } // Exibe uma bolinha vermelha
+                                    ) {
+                                        Icon(item.icon, contentDescription = item.label)
+                                    }
+                                } else {
+                                    Icon(item.icon, contentDescription = item.label)
                                 }
                             }
                         )

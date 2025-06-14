@@ -7,10 +7,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.ondetem.data.Produto
 import com.example.ondetem.data.SettingsDataStore
+import com.example.ondetem.data.UserRepository
 import com.example.ondetem.ui.MainScreen
 import com.example.ondetem.ui.theme.OndeTEMTheme
 import com.example.ondetem.viewmodel.ProdutoViewModel
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -24,26 +29,44 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         settingsDataStore = SettingsDataStore(this)
 
+        // Observa mudanças no estado de autenticação (login/logout)
         lifecycleScope.launch {
-            // ALTERAÇÃO 1: Adicionar o StateFlow `viewModel.todosOsProdutos` ao combine.
-            // Agora o combine vai esperar que TODOS os fluxos emitam um valor inicial.
+            Firebase.auth.addAuthStateListener { auth ->
+                // Recria a UI com o estado do usuário atual (logado ou nulo)
+                setupUI(auth.currentUser?.uid)
+            }
+        }
+    }
+
+    private fun setupUI(userId: String?) {
+        lifecycleScope.launch {
+            // Cria um fluxo para a contagem de notificações não lidas.
+            // Se não houver usuário, o fluxo emite 0.
+            val unreadCountFlow = userId?.let {
+                UserRepository.getUnreadNotificationsCountFlow(it)
+            } ?: flowOf(0)
+
+            // Combina todos os fluxos de dados necessários para a UI
             combine(
                 settingsDataStore.isDarkMode,
                 settingsDataStore.favoriteProductIds,
                 settingsDataStore.areNotificationsEnabled,
-                viewModel.todosOsProdutos // <- O novo fluxo é adicionado aqui
-            ) { isDarkMode, favoriteIds, notificationsEnabled, allProducts -> // <- Nova variável
+                viewModel.todosOsProdutos,
+                unreadCountFlow.distinctUntilChanged() // <-- NOVO FLUXO ADICIONADO
+            ) { isDarkMode, favoriteIds, notificationsEnabled, allProducts, unreadCount ->
 
-                // ALTERAÇÃO 2: A lista `allProducts` agora vem diretamente do fluxo combinado.
-                // Isso garante que ela não estará vazia quando este código for executado.
                 val favoriteProducts = allProducts.filter { produto ->
                     favoriteIds.contains(produto.id)
                 }
 
-                // Usar uma data class para organizar os dados é uma boa prática
-                MainScreenState(isDarkMode, favoriteProducts, notificationsEnabled)
+                MainScreenState(
+                    isDarkMode = isDarkMode,
+                    favoriteProducts = favoriteProducts,
+                    areNotificationsEnabled = notificationsEnabled,
+                    unreadNotificationCount = unreadCount // <-- NOVO DADO ADICIONADO
+                )
 
-            }.collect { state -> // O 'it' foi substituído por 'state' para mais clareza
+            }.collect { state ->
                 setContent {
                     OndeTEMTheme(darkTheme = state.isDarkMode) {
                         MainScreen(
@@ -54,18 +77,20 @@ class MainActivity : ComponentActivity() {
                                     settingsDataStore.saveDarkMode(!state.isDarkMode)
                                 }
                             },
-                            favoriteProducts = state.favoriteProducts, // Usamos o valor do state
+                            favoriteProducts = state.favoriteProducts,
                             onToggleFavorite = { produto ->
                                 lifecycleScope.launch {
                                     settingsDataStore.toggleFavorite(produto.id)
                                 }
                             },
-                            areNotificationsEnabled = state.notificationsEnabled, // Usamos o valor do state
+                            areNotificationsEnabled = state.areNotificationsEnabled,
                             onToggleNotifications = {
                                 lifecycleScope.launch {
-                                    settingsDataStore.saveNotificationsPreference(!state.notificationsEnabled)
+                                    settingsDataStore.saveNotificationsPreference(!state.areNotificationsEnabled)
                                 }
-                            }
+                            },
+                            // Passa a contagem para a MainScreen
+                            unreadNotificationCount = state.unreadNotificationCount
                         )
                     }
                 }
@@ -74,9 +99,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Data class para ajudar a organizar o estado combinado
+// Atualize a data class para incluir o novo campo
 private data class MainScreenState(
     val isDarkMode: Boolean,
     val favoriteProducts: List<Produto>,
-    val notificationsEnabled: Boolean
+    val areNotificationsEnabled: Boolean,
+    val unreadNotificationCount: Int
 )

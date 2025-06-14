@@ -5,7 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.* // <<-- MUDANÇA IMPORTANTE NO IMPORT
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,9 +26,10 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import androidx.compose.ui.graphics.Color
 import java.util.*
 
-@OptIn(ExperimentalMaterialApi::class) // <-- MUDANÇA IMPORTANTE NA ANOTAÇÃO
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun NotificacoesScreen() {
     val userId = Firebase.auth.currentUser?.uid
@@ -42,6 +42,16 @@ fun NotificacoesScreen() {
             flowOf(emptyList())
         }
     }.collectAsStateWithLifecycle(initialValue = null)
+
+    // --- MUDANÇA AQUI ---
+    // Efeito que marca as notificações como lidas assim que a tela é exibida.
+    LaunchedEffect(userId) {
+        userId?.let {
+            scope.launch {
+                UserRepository.markAllNotificationsAsRead(it)
+            }
+        }
+    }
 
     val notificacoes = notificacoesState
 
