@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -17,11 +19,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import coil.compose.AsyncImage
 import com.example.ondetem.data.Produto
-import com.example.ondetem.ui.utils.formatPrice // <-- IMPORT ADICIONADO AQUI
+import com.example.ondetem.ui.utils.formatPrice
 
 @Composable
 fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
@@ -39,15 +39,15 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = CardDefaults.outlinedCardBorder()
+        shape = MaterialTheme.shapes.medium, // Bordas um pouco menos arredondadas
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
+            // --- IMAGEM DO PRODUTO ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f)
+                    .aspectRatio(1.2f) // Proporção um pouco mais retangular
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
@@ -68,61 +68,73 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 }
             }
 
-            ConstraintLayout(
+            // --- SEÇÃO DE INFORMAÇÕES DO PRODUTO ---
+            Column(
                 modifier = Modifier
                     .padding(12.dp)
                     .fillMaxWidth()
-                    .height(110.dp)
+                    .height(120.dp), // Altura fixa para alinhar os cards na grade
+                verticalArrangement = Arrangement.SpaceBetween // Distribui o espaço
             ) {
-                val (nome, loja, preco, distancia) = createRefs()
-
-                Text(
-                    text = produto.nome,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.constrainAs(nome) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
-                    }
-                )
-
-                Text(
-                    text = produto.lojaNome,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.constrainAs(loja) {
-                        top.linkTo(nome.bottom, margin = 2.dp)
-                        start.linkTo(parent.start)
-                    }
-                )
-
-                Text(
-                    text = formatPrice(produto.precoEmCentavos), // <-- A FUNÇÃO SENDO USADA AQUI
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.constrainAs(preco) {
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                    }
-                )
-
-                produto.distanciaEmMetros?.let {
+                // NOME E LOJA
+                Column {
                     Text(
-                        text = formatarDistancia(it),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.constrainAs(distancia) {
-                            bottom.linkTo(preco.bottom)
-                            end.linkTo(parent.end)
-                        }
+                        text = produto.nome,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Storefront,
+                            contentDescription = "Loja",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = produto.lojaNome,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // PREÇO E DISTÂNCIA
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = formatPrice(produto.precoEmCentavos),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    produto.distanciaEmMetros?.let {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Distância",
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = formatarDistancia(it),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
         }
