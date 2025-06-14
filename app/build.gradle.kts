@@ -42,6 +42,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    implementation("com.google.firebase:firebase-messaging-ktx")
+
     // ÍCONES
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
 

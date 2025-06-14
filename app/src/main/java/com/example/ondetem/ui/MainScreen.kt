@@ -1,5 +1,10 @@
 package com.example.ondetem.ui
 
+import android.Manifest
+import android.os.Build // Adicione este import
+import com.google.accompanist.permissions.ExperimentalPermissionsApi // Adicione este import
+import com.google.accompanist.permissions.isGranted // Adicione este import
+import com.google.accompanist.permissions.rememberPermissionState // Adicione este import
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -20,10 +25,9 @@ import com.example.ondetem.ui.components.TopBar
 import com.example.ondetem.ui.screens.*
 import com.example.ondetem.viewmodel.ProdutoViewModel
 
-// Classe para facilitar a criação dos itens de navegação
 data class NavItem(val route: String, val label: String, val icon: ImageVector)
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class) // Adicione ExperimentalPermissionsApi aqui
 @Composable
 fun MainScreen(
     viewModel: ProdutoViewModel,
@@ -34,16 +38,27 @@ fun MainScreen(
     areNotificationsEnabled: Boolean,
     onToggleNotifications: () -> Unit
 ) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val notificationPermissionState = rememberPermissionState(
+            permission = Manifest.permission.POST_NOTIFICATIONS
+        )
+        // Pede a permissão assim que a tela é carregada, se ainda não foi concedida
+        LaunchedEffect(Unit) {
+            if (!notificationPermissionState.status.isGranted) {
+                notificationPermissionState.launchPermissionRequest()
+            }
+        }
+    }
     val navController = rememberNavController()
-    // Observa a rota atual de forma mais robusta
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Itens da barra de navegação
+    // --- MUDANÇA 1: ADICIONAR "NOTIFICAÇÕES" AOS ITENS DE NAVEGAÇÃO ---
     val navItems = listOf(
         NavItem("home", "Home", Icons.Default.Home),
-        NavItem("mapa", "Mapa", Icons.Default.Map), // <-- NOVO ITEM
-        NavItem("favoritos", "Favoritos", Icons.Default.Favorite)
+        NavItem("mapa", "Mapa", Icons.Default.Map),
+        NavItem("favoritos", "Favoritos", Icons.Default.Favorite),
+        NavItem("notificacoes", "Alertas", Icons.Default.Notifications) // <-- NOVO ITEM
     )
     val bottomNavRoutes = navItems.map { it.route }
 
@@ -67,20 +82,8 @@ fun MainScreen(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false }
                                 ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Configurações") },
-                                        onClick = {
-                                            navController.navigate("config")
-                                            menuExpanded = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Ajuda") },
-                                        onClick = {
-                                            navController.navigate("ajuda")
-                                            menuExpanded = false
-                                        }
-                                    )
+                                    DropdownMenuItem(text = { Text("Configurações") }, onClick = { navController.navigate("config"); menuExpanded = false })
+                                    DropdownMenuItem(text = { Text("Ajuda") }, onClick = { navController.navigate("ajuda"); menuExpanded = false })
                                 }
                             }
                         }
@@ -98,16 +101,8 @@ fun MainScreen(
                             selected = currentRoute == item.route,
                             onClick = {
                                 navController.navigate(item.route) {
-                                    // Pop up to the start destination of the graph to
-                                    // avoid building up a large stack of destinations
-                                    // on the back stack as users select items
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    // Avoid multiple copies of the same destination when
-                                    // re-selecting the same item
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
                                     launchSingleTop = true
-                                    // Restore state when re-selecting a previously selected item
                                     restoreState = true
                                 }
                             }
@@ -122,12 +117,12 @@ fun MainScreen(
             enterTransition = { fadeIn(animationSpec = tween(300)) }, exitTransition = { fadeOut(animationSpec = tween(300)) },
             popEnterTransition = { fadeIn(animationSpec = tween(300)) }, popExitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
-            // Rotas existentes
             composable("home") { HomeScreen(viewModel) { id -> navController.navigate("detalhes/$id") } }
             composable("favoritos") { FavoritosScreen(favoriteProducts) { id -> navController.navigate("detalhes/$id") } }
-
-            // --- NOVA ROTA PARA O MAPA ---
             composable("mapa") { MapaScreen() }
+
+            // --- MUDANÇA 2: ADICIONAR A ROTA PARA A NOVA TELA ---
+            composable("notificacoes") { NotificacoesScreen() }
 
             composable("config") { ConfiguracoesScreen(viewModel, darkMode, onToggleDarkMode, areNotificationsEnabled, onToggleNotifications) }
             composable("ajuda") { AjudaScreen() }
@@ -135,60 +130,12 @@ fun MainScreen(
             composable("selecionar_perfil") { RoleSelectionScreen({ navController.navigate("home") { popUpTo("selecionar_perfil") { inclusive = true } } }, { navController.navigate("login") }) }
             composable("login") { LoginScreen(onLoginSucesso = { navController.navigate("perfil_vendedor") { popUpTo("selecionar_perfil") { inclusive = true } } }, onIrParaCadastro = { navController.navigate("cadastro") }) }
             composable("cadastro") { CadastroScreen({ navController.navigate("login") { popUpTo("cadastro") { inclusive = true } } }, { navController.popBackStack() }) }
-
-            composable("perfil_vendedor") {
-                PerfilVendedorScreen(
-                    onCadastrarLoja = { vendedorId -> navController.navigate("cadastro_loja/$vendedorId") },
-                    onLogout = { navController.navigate("selecionar_perfil") { popUpTo(navController.graph.startDestinationId) { inclusive = true } } },
-                    onLojaClick = { lojaId -> navController.navigate("detalhes_loja/$lojaId") },
-                    onEditLoja = { lojaId -> navController.navigate("editar_loja/$lojaId") }
-                )
-            }
-
-            composable("cadastro_loja/{vendedorId}") { backStackEntry ->
-                val vendedorId = backStackEntry.arguments?.getString("vendedorId")
-                CadastroLojaScreen(
-                    vendedorId = vendedorId,
-                    lojaId = null,
-                    onLojaSalva = { navController.popBackStack() }
-                )
-            }
-
-            composable("editar_loja/{lojaId}") { backStackEntry ->
-                val lojaId = backStackEntry.arguments?.getString("lojaId")
-                CadastroLojaScreen(
-                    vendedorId = null,
-                    lojaId = lojaId,
-                    onLojaSalva = { navController.popBackStack() }
-                )
-            }
-
-            composable("detalhes_loja/{lojaId}") { backStackEntry ->
-                val lojaId = backStackEntry.arguments?.getString("lojaId") ?: ""
-                DetalhesLojaScreen(
-                    lojaId = lojaId,
-                    onAddProduto = { navController.navigate("cadastro_produto/$lojaId") },
-                    onEditProduto = { produtoId -> navController.navigate("editar_produto/$produtoId") }
-                )
-            }
-
-            composable("cadastro_produto/{lojaId}") { backStackEntry ->
-                val lojaId = backStackEntry.arguments?.getString("lojaId")
-                CadastroProdutoScreen(
-                    lojaId = lojaId,
-                    produtoId = null,
-                    onProdutoSalvo = { navController.popBackStack() }
-                )
-            }
-
-            composable("editar_produto/{produtoId}") { backStackEntry ->
-                val produtoId = backStackEntry.arguments?.getString("produtoId")
-                CadastroProdutoScreen(
-                    lojaId = null,
-                    produtoId = produtoId,
-                    onProdutoSalvo = { navController.popBackStack() }
-                )
-            }
+            composable("perfil_vendedor") { PerfilVendedorScreen(onCadastrarLoja = { vendedorId -> navController.navigate("cadastro_loja/$vendedorId") }, onLogout = { navController.navigate("selecionar_perfil") { popUpTo(navController.graph.startDestinationId) { inclusive = true } } }, onLojaClick = { lojaId -> navController.navigate("detalhes_loja/$lojaId") }, onEditLoja = { lojaId -> navController.navigate("editar_loja/$lojaId") }) }
+            composable("cadastro_loja/{vendedorId}") { backStackEntry -> val vendedorId = backStackEntry.arguments?.getString("vendedorId"); CadastroLojaScreen(vendedorId = vendedorId, lojaId = null, onLojaSalva = { navController.popBackStack() }) }
+            composable("editar_loja/{lojaId}") { backStackEntry -> val lojaId = backStackEntry.arguments?.getString("lojaId"); CadastroLojaScreen(vendedorId = null, lojaId = lojaId, onLojaSalva = { navController.popBackStack() }) }
+            composable("detalhes_loja/{lojaId}") { backStackEntry -> val lojaId = backStackEntry.arguments?.getString("lojaId") ?: ""; DetalhesLojaScreen(lojaId = lojaId, onAddProduto = { navController.navigate("cadastro_produto/$lojaId") }, onEditProduto = { produtoId -> navController.navigate("editar_produto/$produtoId") }) }
+            composable("cadastro_produto/{lojaId}") { backStackEntry -> val lojaId = backStackEntry.arguments?.getString("lojaId"); CadastroProdutoScreen(lojaId = lojaId, produtoId = null, onProdutoSalvo = { navController.popBackStack() }) }
+            composable("editar_produto/{produtoId}") { backStackEntry -> val produtoId = backStackEntry.arguments?.getString("produtoId"); CadastroProdutoScreen(lojaId = null, produtoId = produtoId, onProdutoSalvo = { navController.popBackStack() }) }
         }
     }
 }
