@@ -40,7 +40,6 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.Top
     ) {
-        // --- IMAGEM À ESQUERDA ---
         Box(
             modifier = Modifier
                 .size(110.dp)
@@ -48,9 +47,10 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            if (produto.imagemUrl.isNotBlank()) {
+            // Esta lógica já está correta!
+            if (produto.primaryImageUrl.isNotBlank()) {
                 AsyncImage(
-                    model = produto.imagemUrl,
+                    model = produto.primaryImageUrl,
                     contentDescription = "Imagem do produto ${produto.nome}",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -67,16 +67,11 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // ================================================================
-        // ===== MUDANÇA NO LAYOUT DA COLUNA DE INFORMAÇÕES ===============
-        // ================================================================
         Column(
-            // A Column agora ocupa toda a altura disponível da imagem
             modifier = Modifier
                 .weight(1f)
-                .height(110.dp) // Garante que a altura seja a mesma da imagem
+                .height(110.dp)
         ) {
-            // 1. NOME DO PRODUTO
             Text(
                 text = produto.nome,
                 style = MaterialTheme.typography.titleLarge,
@@ -84,8 +79,6 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-
-            // 2. NOME DA LOJA
             Text(
                 text = produto.lojaNome,
                 style = MaterialTheme.typography.bodyMedium,
@@ -94,26 +87,18 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 4.dp)
             )
-
-            // 3. SPACER COM PESO (O "TRUQUE")
-            // Este Spacer ocupa todo o espaço vertical restante, empurrando o
-            // conteúdo abaixo dele para o fundo da Column.
             Spacer(modifier = Modifier.weight(1f))
-
-            // 4. PREÇO E DISTÂNCIA NA MESMA LINHA (AGORA EMBAIXO)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
-                // Preço
                 Text(
                     text = formatPrice(produto.precoEmCentavos),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
-                // Distância (se houver)
                 produto.distanciaEmMetros?.let {
                     Text(
                         text = formatarDistancia(it),

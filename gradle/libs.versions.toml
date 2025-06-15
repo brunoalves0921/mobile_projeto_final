@@ -13,7 +13,8 @@ composeBom = "2024.09.00"
 navigationComposeJvmstubs = "2.9.0"
 constraintlayout = "2.2.1"
 material3 = "1.2.1" # <-- VERSÃO EXPLÍCITA ADICIONADA
-kotlinx-coroutines = "1.8.1" # <-- VERSÃO EXPLÍCITA ADICIONADA
+kotlinx-coroutines = "1.8.1"
+identityJvm = "202411.1" # <-- VERSÃO EXPLÍCITA ADICIONADA
 
 [libraries]
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "play-services-location" }
@@ -39,6 +40,7 @@ androidx-navigation-compose-jvmstubs = { group = "androidx.navigation", name = "
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 # --- MUDANÇA AQUI ---
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinx-coroutines" }
+identity-jvm = { group = "com.android.identity", name = "identity-jvm", version.ref = "identityJvm" }
 
 
 [plugins]

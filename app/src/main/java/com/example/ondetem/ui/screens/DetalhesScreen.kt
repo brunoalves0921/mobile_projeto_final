@@ -65,10 +65,12 @@ fun DetalhesScreen(
     var showPriceAlertDialog by remember { mutableStateOf(false) }
     var desiredPrice by remember { mutableStateOf("") }
 
-    LaunchedEffect(produtoId, viewModel.todosOsProdutos.value) {
+    LaunchedEffect(produtoId) {
         isLoading = true
-        produto = viewModel.todosOsProdutos.value.firstOrNull { it.id == produtoId }
-        isLoading = false
+        viewModel.getProdutoById(produtoId) { p ->
+            produto = p
+            isLoading = false
+        }
     }
 
     if (isLoading) {
@@ -121,19 +123,17 @@ fun DetalhesScreen(
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
-                // Separa as mídias em listas diferentes
+                // Esta lógica já está correta!
                 val imageUrls = remember(produtoNaoNulo) {
-                    listOf(produtoNaoNulo.imagemUrl).filter { it.isNotBlank() }
-                    // NOTA: Se no futuro 'imagemUrl' virar uma lista, basta passar a lista aqui.
+                    produtoNaoNulo.imageUrls
                 }
                 val videoUrl = remember(produtoNaoNulo) {
                     produtoNaoNulo.videoUrl.takeIf { it.isNotBlank() }
                 }
 
-                // Cria as abas dinamicamente, apenas se houver conteúdo
                 val tabItems = remember(imageUrls, videoUrl) {
                     buildList {
-                        if (imageUrls.isNotEmpty()) add("Imagens")
+                        if (imageUrls.isNotEmpty()) add(if (imageUrls.size > 1) "Imagens" else "Imagem")
                         if (videoUrl != null) add("Vídeo")
                     }
                 }
@@ -165,10 +165,7 @@ fun DetalhesScreen(
                             }, label = "mediaAnimation"
                         ) { tabIndex ->
                             when (tabItems[tabIndex]) {
-                                "Imagens" -> {
-                                    // ================================================================
-                                    // ===== LÓGICA DO CARROSSEL APENAS PARA IMAGENS ==================
-                                    // ================================================================
+                                "Imagem", "Imagens" -> {
                                     if (imageUrls.size > 1) {
                                         val pagerState = rememberPagerState { imageUrls.size }
                                         Box(contentAlignment = Alignment.BottomCenter) {
@@ -183,7 +180,6 @@ fun DetalhesScreen(
                                                     contentScale = ContentScale.Crop
                                                 )
                                             }
-                                            // Indicadores (bolinhas)
                                             Row(
                                                 Modifier
                                                     .height(50.dp)
@@ -203,7 +199,6 @@ fun DetalhesScreen(
                                             }
                                         }
                                     } else {
-                                        // Caso tenha só uma imagem, mostra direto
                                         AsyncImage(
                                             model = imageUrls.firstOrNull(),
                                             contentDescription = "Imagem do produto",
@@ -213,7 +208,6 @@ fun DetalhesScreen(
                                     }
                                 }
                                 "Vídeo" -> {
-                                    // A aba de vídeo continua com a solução estável
                                     if (videoUrl != null) {
                                         VideoPlayer(videoUrl = videoUrl, modifier = Modifier.fillMaxSize())
                                     }
@@ -234,8 +228,6 @@ fun DetalhesScreen(
                 }
             }
 
-
-            // O resto da tela continua exatamente igual...
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -257,7 +249,7 @@ fun DetalhesScreen(
                             modifier = Modifier
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
-                                    indication = null, // <-- Esta linha remove o efeito de fundo
+                                    indication = null,
                                     onClick = { onToggleFavorite(produtoNaoNulo) }
                                 )
                                 .padding(start = 16.dp)

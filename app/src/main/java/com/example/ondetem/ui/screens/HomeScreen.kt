@@ -26,6 +26,11 @@ import com.google.accompanist.permissions.rememberPermissionState
 @Composable
 fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
 
+    // ================================================================
+    // ===== CORREÇÃO: Coletando o estado de 'isListLoading' ===========
+    // ================================================================
+    val isListLoading by viewModel.isListLoading.collectAsState()
+
     val locationPermissionState = rememberPermissionState(
         permission = Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -52,7 +57,10 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
             keyboardActions = KeyboardActions(onSearch = { viewModel.buscar(viewModel.busca) })
         )
 
-        if (viewModel.isLoading) {
+        // ================================================================
+        // ===== CORREÇÃO: Usando a variável 'isListLoading' correta ======
+        // ================================================================
+        if (isListLoading) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -101,11 +109,10 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
                             onItemClick(produto.id)
                         }
 
-                        // --- MUDANÇA NA DIVISÓRIA ---
                         if (index < viewModel.produtos.size - 1) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
-                                thickness = 2.dp, // <-- Altere este valor para a espessura desejada
+                                thickness = 2.dp,
                                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.9f)
                             )
                         }
