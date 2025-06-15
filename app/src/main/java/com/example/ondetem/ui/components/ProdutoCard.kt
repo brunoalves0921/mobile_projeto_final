@@ -1,5 +1,6 @@
 package com.example.ondetem.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,9 +21,22 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.utils.formatPrice
+import com.example.ondetem.ui.utils.getThumbnailUrl
 
 @Composable
 fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
+
+    // ================================================================
+    // ===== ADICIONANDO LOGS PARA DEPURAÇÃO ==========================
+    // ================================================================
+    val originalUrl = produto.primaryImageUrl
+    val thumbnailUrl = getThumbnailUrl(originalUrl, "200x200")
+
+    Log.d("ImageDebug", "--- Novo Card ---")
+    Log.d("ImageDebug", "Nome do Produto: ${produto.nome}")
+    Log.d("ImageDebug", "URL Original: $originalUrl")
+    Log.d("ImageDebug", "URL da Miniatura Gerada: $thumbnailUrl")
+
 
     fun formatarDistancia(metros: Float?): String {
         if (metros == null) return ""
@@ -47,10 +61,10 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            // Esta lógica já está correta!
             if (produto.primaryImageUrl.isNotBlank()) {
                 AsyncImage(
-                    model = produto.primaryImageUrl,
+                    // Usando a variável que já logamos para garantir consistência
+                    model = thumbnailUrl,
                     contentDescription = "Imagem do produto ${produto.nome}",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -79,6 +93,7 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+
             Text(
                 text = produto.lojaNome,
                 style = MaterialTheme.typography.bodyMedium,
@@ -87,7 +102,9 @@ fun ProdutoCard(produto: Produto, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 4.dp)
             )
+
             Spacer(modifier = Modifier.weight(1f))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

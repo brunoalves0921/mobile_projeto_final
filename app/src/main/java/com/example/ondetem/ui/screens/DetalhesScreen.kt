@@ -41,6 +41,10 @@ import com.example.ondetem.data.PriceAlertRepository
 import com.example.ondetem.data.Produto
 import com.example.ondetem.ui.components.VideoPlayer
 import com.example.ondetem.ui.utils.CurrencyVisualTransformation
+// ================================================================
+// ===== IMPORT NECESSÁRIO PARA A NOVA FUNÇÃO =====================
+// ================================================================
+import com.example.ondetem.ui.utils.getThumbnailUrl
 import com.example.ondetem.viewmodel.ProdutoViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -123,7 +127,6 @@ fun DetalhesScreen(
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
-                // Esta lógica já está correta!
                 val imageUrls = remember(produtoNaoNulo) {
                     produtoNaoNulo.imageUrls
                 }
@@ -174,7 +177,8 @@ fun DetalhesScreen(
                                                 modifier = Modifier.fillMaxSize()
                                             ) { page ->
                                                 AsyncImage(
-                                                    model = imageUrls[page],
+                                                    // Carrega a imagem grande para a galeria
+                                                    model = getThumbnailUrl(imageUrls[page], "1080x1080"),
                                                     contentDescription = "Imagem do produto ${page + 1}",
                                                     modifier = Modifier.fillMaxSize(),
                                                     contentScale = ContentScale.Crop
@@ -200,7 +204,8 @@ fun DetalhesScreen(
                                         }
                                     } else {
                                         AsyncImage(
-                                            model = imageUrls.firstOrNull(),
+                                            // Carrega a imagem grande para a visualização única
+                                            model = getThumbnailUrl(imageUrls.firstOrNull() ?: "", "1080x1080"),
                                             contentDescription = "Imagem do produto",
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop
