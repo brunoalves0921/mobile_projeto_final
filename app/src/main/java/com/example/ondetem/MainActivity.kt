@@ -68,7 +68,12 @@ class MainActivity : ComponentActivity() {
                     isDarkMode = isDarkMode,
                     favoriteProducts = favoriteProducts,
                     areNotificationsEnabled = notificationsEnabled,
-                    unreadNotificationCount = unreadCount // <-- NOVO DADO ADICIONADO
+                    unreadNotificationCount = unreadCount,
+                    onClearFavorites = {
+                        lifecycleScope.launch {
+                            settingsDataStore.clearFavorites()
+                        }
+                    }
                 )
 
             }.collect { state ->
@@ -95,7 +100,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             // Passa a contagem para a MainScreen
-                            unreadNotificationCount = state.unreadNotificationCount
+                            unreadNotificationCount = state.unreadNotificationCount,
+                            onClearFavorites = state.onClearFavorites // <-- Adicione esta linha
                         )
                     }
                 }
@@ -104,10 +110,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Atualize a data class para incluir o novo campo
 private data class MainScreenState(
     val isDarkMode: Boolean,
     val favoriteProducts: List<Produto>,
     val areNotificationsEnabled: Boolean,
-    val unreadNotificationCount: Int
+    val unreadNotificationCount: Int,
+    val onClearFavorites: () -> Unit // <-- Adicione esta linha
 )

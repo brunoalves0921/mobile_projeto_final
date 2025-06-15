@@ -2,15 +2,19 @@ package com.example.ondetem.ui.screens
 
 import android.Manifest
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,7 +29,7 @@ import com.google.maps.android.compose.*
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MapaScreen() {
-    // --- TODA A SUA LÓGICA DE DADOS E ESTADO PERMANECE IGUAL ---
+    // --- A LÓGICA DE DADOS PERMANECE A MESMA ---
     val locationPermissionState = rememberPermissionState(
         permission = Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -55,42 +59,59 @@ fun MapaScreen() {
         }
     }
 
-    // ================================================================
-    // ===== NOVO LAYOUT COM CARD APLICADO AQUI =======================
-    // ================================================================
-
-    // Adicionamos um padding geral na tela para o Card não ficar colado nas bordas.
+    // --- O LAYOUT COM CARD PERMANECE O MESMO ---
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // O Card agora é o contêiner principal para a busca e o mapa.
         Card(
             modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(16.dp), // Cantos arredondados
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Sombra sutil
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            // A Column interna organiza a busca em cima e o mapa embaixo.
             Column(modifier = Modifier.fillMaxSize()) {
-                // O seu campo de busca, agora dentro do Card.
+
+                // ================================================================
+                // ===== CAMPO DE BUSCA MODERNIZADO ===============================
+                // ================================================================
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text("Buscar loja no mapa...") },
+                    placeholder = { Text("Buscar loja no mapa...") }, // Usamos placeholder em vez de label
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+                    // Ícone para limpar a busca, que só aparece quando há texto
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Limpar busca")
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp), // Padding interno do Card
-                    singleLine = true
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    singleLine = true,
+                    // Deixa o campo com o formato de pílula
+                    shape = CircleShape,
+                    // Customiza as cores para um visual mais limpo
+                    colors = OutlinedTextFieldDefaults.colors(
+                        // Cor da borda quando o campo está selecionado
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        // Borda transparente quando o campo não está focado
+                        unfocusedBorderColor = Color.Transparent,
+                        // Cor de fundo sutil para destacar o campo do card
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
 
-                // O Box com o mapa ocupa o resto do espaço do Card.
+                // O Box com o mapa continua o mesmo
                 Box(modifier = Modifier.weight(1f)) {
+                    // ... (código do GoogleMap e do CircularProgressIndicator)
                     val mapProperties = MapProperties(
                         isMyLocationEnabled = locationPermissionState.status.isGranted
                     )
-                    // O seu GoogleMap, com toda a lógica de marcadores, intacta.
                     GoogleMap(
                         modifier = Modifier.fillMaxSize(),
                         cameraPositionState = cameraPositionState,
@@ -117,7 +138,6 @@ fun MapaScreen() {
                             }
                         }
                     }
-                    // O seu indicador de loading, agora dentro do Box do mapa no Card.
                     if (todasAsLojas == null) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }

@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -72,7 +73,8 @@ fun MainScreen(
     onToggleFavorite: (Produto) -> Unit,
     areNotificationsEnabled: Boolean,
     onToggleNotifications: () -> Unit,
-    unreadNotificationCount: Int
+    unreadNotificationCount: Int,
+    onClearFavorites: () -> Unit
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val notificationPermissionState = rememberPermissionState(
@@ -164,7 +166,6 @@ fun MainScreen(
                         label = "indicatorOffset"
                     )
 
-                    // A variável para a cor da barra principal continua útil
                     val navigationBarColor = if (darkMode) {
                         com.example.ondetem.ui.theme.DarkSurface
                     } else {
@@ -172,19 +173,13 @@ fun MainScreen(
                     }
 
                     Column {
-                        // ======================================================================
-                        // ===== CORREÇÃO PARA DEIXAR A BARRA TRANSPARENTE ======================
-                        // ======================================================================
-                        // 1. A ÁREA DO INDICADOR
-                        // O Box que contém a linha azul agora não tem cor de fundo.
-                        // Ele apenas reserva o espaço de 3.dp de altura.
+                        // A ÁREA DO INDICADOR
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(3.dp)
-                            // A LINHA '.background(navigationBarColor)' FOI REMOVIDA DAQUI.
+                                .background(navigationBarColor)
                         ) {
-                            // A linha azul que se move (código inalterado)
                             Box(
                                 modifier = Modifier
                                     .width(itemWidth * 0.6f)
@@ -194,12 +189,11 @@ fun MainScreen(
                             )
                         }
 
-                        // 2. A BARRA DE NAVEGAÇÃO PRINCIPAL (código inalterado)
+                        // A BARRA DE NAVEGAÇÃO CUSTOMIZADA
                         Surface(
                             color = navigationBarColor,
                             tonalElevation = 3.dp
                         ) {
-                            // O restante do código da barra de navegação continua o mesmo
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -215,20 +209,29 @@ fun MainScreen(
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                     }
 
+                                    // ======================================================================
+                                    // ===== MUDANÇA PARA REMOVER O EFEITO DE CLIQUE ========================
+                                    // ======================================================================
                                     Column(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .clickable {
-                                                navController.navigate(item.route) {
-                                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                                    launchSingleTop = true
-                                                    restoreState = true
+                                            // Adicionamos parâmetros ao clickable
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null, // Esta linha desativa o efeito visual (ripple)
+                                                onClick = {
+                                                    navController.navigate(item.route) {
+                                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                    }
                                                 }
-                                            }
+                                            )
                                             .padding(vertical = 8.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.Center
                                     ) {
+                                        // O conteúdo (ícone e texto) continua o mesmo
                                         if (item.route == "notificacoes" && unreadNotificationCount > 0) {
                                             BadgedBox(
                                                 badge = { Badge { Text("$unreadNotificationCount") } }
@@ -273,7 +276,7 @@ fun MainScreen(
             composable("favoritos") { FavoritosScreen(favoriteProducts) { id -> navController.navigate("detalhes/$id") } }
             composable("mapa") { MapaScreen() }
             composable("notificacoes") { NotificacoesScreen() }
-            composable("config") { ConfiguracoesScreen(viewModel, darkMode, onToggleDarkMode, areNotificationsEnabled, onToggleNotifications) }
+            composable("config") { ConfiguracoesScreen(viewModel, darkMode, onToggleDarkMode, areNotificationsEnabled, onToggleNotifications, onClearFavorites) }
             composable("ajuda") { AjudaScreen() }
             composable("detalhes/{id}") { backStackEntry -> val id = backStackEntry.arguments?.getString("id") ?: return@composable; DetalhesScreen(id, viewModel, favoriteProducts, onToggleFavorite, areNotificationsEnabled) }
             composable("selecionar_perfil") { RoleSelectionScreen({ navController.navigate("home") { popUpTo("selecionar_perfil") { inclusive = true } } }, { navController.navigate("login") }) }

@@ -27,6 +27,13 @@ class SettingsDataStore(private val context: Context) {
             preferences[DARK_MODE_KEY] ?: false
         }
 
+    suspend fun clearFavorites() {
+        context.dataStore.edit { preferences ->
+            // Usando o nome correto da variável que definimos no companion object
+            preferences[FAVORITES_KEY] = emptySet()
+        }
+    }
+
     suspend fun saveDarkMode(isDarkMode: Boolean) {
         context.dataStore.edit { settings ->
             settings[DARK_MODE_KEY] = isDarkMode
