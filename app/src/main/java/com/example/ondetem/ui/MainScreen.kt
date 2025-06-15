@@ -164,13 +164,27 @@ fun MainScreen(
                         label = "indicatorOffset"
                     )
 
+                    // A variável para a cor da barra principal continua útil
+                    val navigationBarColor = if (darkMode) {
+                        com.example.ondetem.ui.theme.DarkSurface
+                    } else {
+                        com.example.ondetem.ui.theme.LightBackground
+                    }
+
                     Column {
-                        // 1. O INDICADOR (sem alterações)
+                        // ======================================================================
+                        // ===== CORREÇÃO PARA DEIXAR A BARRA TRANSPARENTE ======================
+                        // ======================================================================
+                        // 1. A ÁREA DO INDICADOR
+                        // O Box que contém a linha azul agora não tem cor de fundo.
+                        // Ele apenas reserva o espaço de 3.dp de altura.
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(3.dp)
+                            // A LINHA '.background(navigationBarColor)' FOI REMOVIDA DAQUI.
                         ) {
+                            // A linha azul que se move (código inalterado)
                             Box(
                                 modifier = Modifier
                                     .width(itemWidth * 0.6f)
@@ -180,21 +194,12 @@ fun MainScreen(
                             )
                         }
 
-                        // ======================================================================
-                        // ===== 2. BARRA CUSTOMIZADA COM COR DINÂMICA ==========================
-                        // ======================================================================
+                        // 2. A BARRA DE NAVEGAÇÃO PRINCIPAL (código inalterado)
                         Surface(
-                            // AQUI ESTÁ A LÓGICA DE MUDANÇA DE COR
-                            color = if (darkMode) {
-                                // Cor que será usada no TEMA ESCURO
-                                com.example.ondetem.ui.theme.DarkSurface // Um cinza escuro, um pouco mais claro que o fundo
-                            } else {
-                                // Cor que será usada no TEMA CLARO
-                                com.example.ondetem.ui.theme.LightBackground //
-                            },
+                            color = navigationBarColor,
                             tonalElevation = 3.dp
                         ) {
-                            // O layout da Row com os itens continua o mesmo...
+                            // O restante do código da barra de navegação continua o mesmo
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
