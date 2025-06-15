@@ -2,16 +2,52 @@ package com.example.ondetem.ui
 
 import android.Manifest
 import android.os.Build
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
+// Imports explícitos do Material 3 para evitar conflitos
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -86,8 +122,6 @@ fun MainScreen(
     val showBottomBar = currentRoute in bottomNavRoutes
     var menuExpanded by remember { mutableStateOf(false) }
 
-    // --- MUDANÇA AQUI ---
-    // Lista de telas que NÃO devem ter o menu de três pontinhos
     val screensWithoutMenu = listOf("login", "cadastro", "selecionar_perfil")
 
     Scaffold(
@@ -98,7 +132,6 @@ fun MainScreen(
                     canNavigateBack = navController.previousBackStackEntry != null && currentRoute !in bottomNavRoutes,
                     onNavigateBack = { navController.popBackStack() },
                     actions = {
-                        // A condição foi movida para fora, para exibir em mais telas
                         Box {
                             IconButton(onClick = { menuExpanded = true }) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "Menu")
@@ -115,33 +148,109 @@ fun MainScreen(
                 )
             }
         },
+        // ==================================================================
+        // ===== ESTRUTURA COMPLETAMENTE NOVA E CORRETA =====================
+        // ==================================================================
         bottomBar = {
             AnimatedVisibility(visible = showBottomBar) {
-                NavigationBar {
-                    navItems.forEach { item ->
-                        val isSelected = currentRoute == item.route
-                        NavigationBarItem(
-                            selected = isSelected,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                BoxWithConstraints {
+                    val itemWidth = this.maxWidth / navItems.size
+                    val selectedIndex = remember(currentRoute) {
+                        navItems.indexOfFirst { it.route == currentRoute }.takeIf { it != -1 } ?: 0
+                    }
+                    val indicatorXOffset by animateDpAsState(
+                        targetValue = itemWidth * selectedIndex,
+                        animationSpec = tween(durationMillis = 250),
+                        label = "indicatorOffset"
+                    )
+
+                    Column {
+                        // 1. O INDICADOR (sem alterações)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(itemWidth * 0.6f)
+                                    .fillMaxHeight()
+                                    .offset(x = indicatorXOffset + (itemWidth * 0.2f))
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                        }
+
+                        // ======================================================================
+                        // ===== 2. BARRA CUSTOMIZADA COM COR DINÂMICA ==========================
+                        // ======================================================================
+                        Surface(
+                            // AQUI ESTÁ A LÓGICA DE MUDANÇA DE COR
+                            color = if (darkMode) {
+                                // Cor que será usada no TEMA ESCURO
+                                com.example.ondetem.ui.theme.DarkSurface // Um cinza escuro, um pouco mais claro que o fundo
+                            } else {
+                                // Cor que será usada no TEMA CLARO
+                                com.example.ondetem.ui.theme.LightBackground //
                             },
-                            label = { Text(item.label) },
-                            icon = {
-                                if (item.route == "notificacoes" && unreadNotificationCount > 0) {
-                                    BadgedBox(
-                                        badge = { Badge() }
-                                    ) {
-                                        Icon(item.icon, contentDescription = item.label)
+                            tonalElevation = 3.dp
+                        ) {
+                            // O layout da Row com os itens continua o mesmo...
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(80.dp),
+                                horizontalArrangement = Arrangement.SpaceAround,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                navItems.forEach { item ->
+                                    val isSelected = currentRoute == item.route
+                                    val contentColor = if (isSelected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                     }
-                                } else {
-                                    Icon(item.icon, contentDescription = item.label)
+
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable {
+                                                navController.navigate(item.route) {
+                                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
+                                            }
+                                            .padding(vertical = 8.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        if (item.route == "notificacoes" && unreadNotificationCount > 0) {
+                                            BadgedBox(
+                                                badge = { Badge { Text("$unreadNotificationCount") } }
+                                            ) {
+                                                Icon(
+                                                    imageVector = item.icon,
+                                                    contentDescription = item.label,
+                                                    tint = contentColor
+                                                )
+                                            }
+                                        } else {
+                                            Icon(
+                                                imageVector = item.icon,
+                                                contentDescription = item.label,
+                                                tint = contentColor
+                                            )
+                                        }
+                                        Text(
+                                            text = item.label,
+                                            color = contentColor,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            maxLines = 1
+                                        )
+                                    }
                                 }
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -154,6 +263,7 @@ fun MainScreen(
             enterTransition = { fadeIn(animationSpec = tween(300)) }, exitTransition = { fadeOut(animationSpec = tween(300)) },
             popEnterTransition = { fadeIn(animationSpec = tween(300)) }, popExitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
+            // ... suas rotas ...
             composable("home") { HomeScreen(viewModel) { id -> navController.navigate("detalhes/$id") } }
             composable("favoritos") { FavoritosScreen(favoriteProducts) { id -> navController.navigate("detalhes/$id") } }
             composable("mapa") { MapaScreen() }

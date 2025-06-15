@@ -3,6 +3,8 @@ package com.example.ondetem
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+// ADICIONE ESTE IMPORT
+import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.ondetem.data.Produto
@@ -27,6 +29,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // ESTA É A LINHA QUE FAZ A MÁGICA
+        enableEdgeToEdge()
+
         settingsDataStore = SettingsDataStore(this)
 
         // Observa mudanças no estado de autenticação (login/logout)
