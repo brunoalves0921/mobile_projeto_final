@@ -42,6 +42,11 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.material3)
+    implementation(libs.play.services.location)
+
+    // Adicione estas duas linhas para o ExoPlayer
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
 
     implementation("com.google.firebase:firebase-messaging-ktx")
 

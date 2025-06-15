@@ -2,9 +2,8 @@ package com.example.ondetem.ui.screens
 
 import android.Manifest
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -31,8 +30,6 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
         permission = Manifest.permission.ACCESS_FINE_LOCATION
     )
 
-    // Efeito que ordena os produtos em segundo plano assim que a permissão é concedida.
-    // O usuário não verá a lista até que ele pesquise.
     LaunchedEffect(locationPermissionState.status) {
         if (locationPermissionState.status.isGranted) {
             viewModel.ordenarPorProximidade()
@@ -40,38 +37,45 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
         OutlinedTextField(
             value = viewModel.busca,
             onValueChange = { viewModel.buscar(it) },
             label = { Text("Buscar produto...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { viewModel.buscar(viewModel.busca) })
         )
-        Spacer(modifier = Modifier.height(16.dp))
 
         if (viewModel.isLoading) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+            ) {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(8.dp))
                 Text(viewModel.statusMessage)
             }
         } else {
             if (viewModel.produtos.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = if (viewModel.busca.isNotBlank()) "Nenhum produto encontrado para '${viewModel.busca}'." else "Busque um produto ou clique abaixo para ver os itens mais próximos.",
                             textAlign = TextAlign.Center
                         )
-                        // Este botão agora apenas pede a permissão. A ordenação é automática
-                        // quando a permissão é concedida, graças ao LaunchedEffect.
                         if (!locationPermissionState.status.isGranted) {
                             Button(
                                 onClick = { locationPermissionState.launchPermissionRequest() },
@@ -85,18 +89,25 @@ fun HomeScreen(viewModel: ProdutoViewModel, onItemClick: (String) -> Unit) {
                     }
                 }
             } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(
+                    itemsIndexed(
                         items = viewModel.produtos,
-                        key = { produto -> produto.id }
-                    ) { produto ->
+                        key = { _, produto -> produto.id }
+                    ) { index, produto ->
                         ProdutoCard(produto = produto) {
                             onItemClick(produto.id)
+                        }
+
+                        // --- MUDANÇA NA DIVISÓRIA ---
+                        if (index < viewModel.produtos.size - 1) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 2.dp, // <-- Altere este valor para a espessura desejada
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.9f)
+                            )
                         }
                     }
                 }
