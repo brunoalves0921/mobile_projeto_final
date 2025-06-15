@@ -80,8 +80,12 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _isSaving.value = true
 
+            // ================================================================
+            // ===== MUDANÇA: CHAMA A NOVA FUNÇÃO DE COMPRESSÃO E UPLOAD ======
+            // ================================================================
             val newlyUploadedUrls = if (newImageUris.isNotEmpty()) {
-                repository.uploadImages(newImageUris)
+                // Passa o contexto da aplicação para a função de compressão
+                repository.uploadAndCompressImages(getApplication(), newImageUris)
             } else { emptyList() }
             val finalImageUrls = existingImageUrls + newlyUploadedUrls
 
@@ -100,12 +104,13 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
                 finalPrimaryImageUrl = finalImageUrls.first()
             }
 
+            // ================================================================
+            // ===== MUDANÇA: USA A FUNÇÃO CORRETA PARA UPLOAD DE VÍDEO =======
+            // ================================================================
             var finalVideoUrl = ""
             if (localVideoUri != null) {
-                val uploadedVideoUrl = repository.uploadImages(listOf(localVideoUri))
-                if (uploadedVideoUrl.isNotEmpty()) {
-                    finalVideoUrl = uploadedVideoUrl.first()
-                }
+                // Chama a função que faz o upload do arquivo "cru", sem comprimir
+                finalVideoUrl = repository.uploadRawFile(localVideoUri, "videos") ?: ""
             } else {
                 finalVideoUrl = remoteVideoUrl
             }
@@ -117,18 +122,13 @@ class ProdutoViewModel(application: Application) : AndroidViewModel(application)
                 return@launch
             }
 
-            // ================================================================
-            // ===== CORREÇÃO NA LÓGICA DO PREÇO ==============================
-            // ================================================================
-            // A variável 'preco' já contém o valor em centavos.
-            // Apenas convertemos para Long.
             val precoFinalEmCentavos = preco.toLongOrNull() ?: 0L
 
             val produto = Produto(
                 id = produtoId ?: "",
                 nome = nome,
                 descricao = descricao,
-                precoEmCentavos = precoFinalEmCentavos, // <-- CORREÇÃO AQUI
+                precoEmCentavos = precoFinalEmCentavos,
                 lojaId = loja.id,
                 lojaNome = loja.nome,
                 enderecoLoja = loja.endereco,
