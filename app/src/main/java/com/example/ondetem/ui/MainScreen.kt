@@ -150,9 +150,6 @@ fun MainScreen(
                 )
             }
         },
-        // ==================================================================
-        // ===== ESTRUTURA COMPLETAMENTE NOVA E CORRETA =====================
-        // ==================================================================
         bottomBar = {
             AnimatedVisibility(visible = showBottomBar) {
                 BoxWithConstraints {
@@ -173,7 +170,6 @@ fun MainScreen(
                     }
 
                     Column {
-                        // A ÁREA DO INDICADOR
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -189,7 +185,6 @@ fun MainScreen(
                             )
                         }
 
-                        // A BARRA DE NAVEGAÇÃO CUSTOMIZADA
                         Surface(
                             color = navigationBarColor,
                             tonalElevation = 3.dp
@@ -209,16 +204,12 @@ fun MainScreen(
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                     }
 
-                                    // ======================================================================
-                                    // ===== MUDANÇA PARA REMOVER O EFEITO DE CLIQUE ========================
-                                    // ======================================================================
                                     Column(
                                         modifier = Modifier
                                             .weight(1f)
-                                            // Adicionamos parâmetros ao clickable
                                             .clickable(
                                                 interactionSource = remember { MutableInteractionSource() },
-                                                indication = null, // Esta linha desativa o efeito visual (ripple)
+                                                indication = null,
                                                 onClick = {
                                                     navController.navigate(item.route) {
                                                         popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -231,7 +222,6 @@ fun MainScreen(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.Center
                                     ) {
-                                        // O conteúdo (ícone e texto) continua o mesmo
                                         if (item.route == "notificacoes" && unreadNotificationCount > 0) {
                                             BadgedBox(
                                                 badge = { Badge { Text("$unreadNotificationCount") } }
@@ -271,9 +261,8 @@ fun MainScreen(
             enterTransition = { fadeIn(animationSpec = tween(300)) }, exitTransition = { fadeOut(animationSpec = tween(300)) },
             popEnterTransition = { fadeIn(animationSpec = tween(300)) }, popExitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
-            // ... suas rotas ...
             composable("home") { HomeScreen(viewModel) { id -> navController.navigate("detalhes/$id") } }
-            composable("favoritos") { FavoritosScreen(favoriteProducts) { id -> navController.navigate("detalhes/$id") } }
+            composable("favoritos") { FavoritosScreen(favoriteProducts, { id -> navController.navigate("detalhes/$id") }) }
             composable("mapa") { MapaScreen() }
             composable("notificacoes") { NotificacoesScreen() }
             composable("config") { ConfiguracoesScreen(viewModel, darkMode, onToggleDarkMode, areNotificationsEnabled, onToggleNotifications, onClearFavorites) }
@@ -282,7 +271,27 @@ fun MainScreen(
             composable("selecionar_perfil") { RoleSelectionScreen({ navController.navigate("home") { popUpTo("selecionar_perfil") { inclusive = true } } }, { navController.navigate("login") }) }
             composable("login") { LoginScreen(onLoginSucesso = { navController.navigate("perfil_vendedor") { popUpTo("selecionar_perfil") { inclusive = true } } }, onIrParaCadastro = { navController.navigate("cadastro") }) }
             composable("cadastro") { CadastroScreen({ navController.navigate("login") { popUpTo("cadastro") { inclusive = true } } }, { navController.popBackStack() }) }
-            composable("perfil_vendedor") { PerfilVendedorScreen(onCadastrarLoja = { vendedorId -> navController.navigate("cadastro_loja/$vendedorId") }, onLogout = { navController.navigate("selecionar_perfil") { popUpTo(navController.graph.startDestinationId) { inclusive = true } } }, onLojaClick = { lojaId -> navController.navigate("detalhes_loja/$lojaId") }, onEditLoja = { lojaId -> navController.navigate("editar_loja/$lojaId") }) }
+
+            // ================================================================
+            // ===== CORREÇÃO APLICADA AQUI ===================================
+            // ================================================================
+            // A lógica de logout agora limpa todo o histórico de navegação.
+            composable("perfil_vendedor") {
+                PerfilVendedorScreen(
+                    onCadastrarLoja = { vendedorId -> navController.navigate("cadastro_loja/$vendedorId") },
+                    onLogout = {
+                        navController.navigate("selecionar_perfil") {
+                            // Limpa todas as telas da pilha até o início do gráfico de navegação
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
+                            }
+                        }
+                    },
+                    onLojaClick = { lojaId -> navController.navigate("detalhes_loja/$lojaId") },
+                    onEditLoja = { lojaId -> navController.navigate("editar_loja/$lojaId") }
+                )
+            }
+
             composable("cadastro_loja/{vendedorId}") { backStackEntry -> val vendedorId = backStackEntry.arguments?.getString("vendedorId"); CadastroLojaScreen(vendedorId = vendedorId, lojaId = null, onLojaSalva = { navController.popBackStack() }) }
             composable("editar_loja/{lojaId}") { backStackEntry -> val lojaId = backStackEntry.arguments?.getString("lojaId"); CadastroLojaScreen(vendedorId = null, lojaId = lojaId, onLojaSalva = { navController.popBackStack() }) }
             composable("detalhes_loja/{lojaId}") { backStackEntry -> val lojaId = backStackEntry.arguments?.getString("lojaId") ?: ""; DetalhesLojaScreen(lojaId = lojaId, onAddProduto = { navController.navigate("cadastro_produto/$lojaId") }, onEditProduto = { produtoId -> navController.navigate("editar_produto/$produtoId") }) }
